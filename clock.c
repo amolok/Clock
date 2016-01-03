@@ -215,6 +215,7 @@ struct DSP
   byte AB[4][4];
   byte pos;
   byte brightness;
+  boolean update;
 };
 
 DSP DISP;
@@ -487,7 +488,7 @@ void fill_currentTime(){
 }
 
 void DISP_update(){
-  display(DISP.D);
+  DISP.update=true;
 }
 void DISP_animate(){
   display(DISP.AB[DISP.pos]);
@@ -539,12 +540,14 @@ ISR(TIMER1_COMPA_vect){//timer1 interrupt 8kHz toggles pin timerPin
               if(++Month>=12){  Month=0;
                 ++Year;
     } } } } } }
-
   }
   else{
     digitalWrite(timerPin,LOW);
     toggle1 = 1;
     Tic=tic_tac/100;
+    if(Tic%3==0){
+      DISP_update();
+    }
   }
 }
 
@@ -739,9 +742,12 @@ void loop(){
     digitalWrite(ledR, HIGH);
     digitalWrite(ledG, LOW);
   }
-
+  if(DISP.update){
+    DISP.update=false;
+    display(DISP.D);
+  }
   digitalWrite(ledR, HIGH);
   digitalWrite(ledG, LOW);
-  DISP_update();
-  delay(100);
+  // DISP_update();
+  delay(25);
 }
