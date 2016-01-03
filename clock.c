@@ -84,15 +84,15 @@ const byte FNT_Alphabet[26]=
   ~B01101101  // z
 };
 const byte FNT_WeekDays_rus[8]=
-{ // œÕ ¬“ —– ◊“ œ“ —¡ ¬— = ¡¬Õœ–—“◊
-  ~B01011111, // ¡
-  ~B01111111, // ¬
-  ~B00110111, // Õ
-  ~B01110110, // œ
-  ~B01100111, // –
-  ~B01001110, // —
-  ~B01110000, // “
-  ~B00110011  // ◊
+{ // –ü–ù –í–¢ –°–† –ß–¢ –ü–¢ –°–ë –í–° = –ë–í–ù–ü–†–°–¢–ß
+  ~B01011111, // –ë
+  ~B01111111, // –í
+  ~B00110111, // –ù
+  ~B01110110, // –ü
+  ~B01100111, // –†
+  ~B01001110, // –°
+  ~B01110000, // –¢
+  ~B00110011  // –ß
 };
 
 #define Sensors 6
@@ -209,16 +209,27 @@ volatile byte DayofWeek= 3; // Sunday is day 0
 volatile byte Month=     1;     // Jan is month 0
 volatile byte Year=2016-1900;      // the Year minus 1900
 // display
+struct DSP
+{
+  byte D[4]={0,0,0,0};
+  byte AB[4][4];
+  byte pos;
+  byte brightness;
+};
+
+DSP DISP;
+
 byte D[4]={0,0,0,0}; // Display global
 
-void display(byte DISP[4]){
+void display(byte D[4]){
   digitalWrite(latchPin, LOW);
-  shiftOut(dataPin, clockPin, LSBFIRST, DISP[3]);
-  shiftOut(dataPin, clockPin, LSBFIRST, DISP[2]);
-  shiftOut(dataPin, clockPin, LSBFIRST, DISP[1]);
-  shiftOut(dataPin, clockPin, LSBFIRST, DISP[0]);
+  shiftOut(dataPin, clockPin, LSBFIRST, D[3]);
+  shiftOut(dataPin, clockPin, LSBFIRST, D[2]);
+  shiftOut(dataPin, clockPin, LSBFIRST, D[1]);
+  shiftOut(dataPin, clockPin, LSBFIRST, D[0]);
   digitalWrite(latchPin, HIGH);
 }
+
 void print_sens(byte id, signed int x){
   char string[5];
   byte disp[4];
@@ -322,7 +333,7 @@ void demo_time(){
   // uint16_t t = now();
   Serial.println(t);
   sprintf(string, "%4d", t/1000);
-  // if(t%100==0)tic();
+  // if(t%100==0)timerINT();
   for(byte i=0;i<4;i++){
     if((string[i] >= '0')&&(string[i] <='9')) disp[i]=FNT_Digit[(byte)string[i]-'0'];
     else
@@ -363,98 +374,98 @@ void demo_animation(){
 
 // DISPLAY buffer
 void fill_SS(){
-  D[0]=FNT_blank;
-  D[1]=FNT_blank;
-  D[2]=FNT_Digit[Second/10];
-  D[3]=FNT_Digit[Second%10];
+  DISP.D[0]=FNT_blank;
+  DISP.D[1]=FNT_blank;
+  DISP.D[2]=FNT_Digit[Second/10];
+  DISP.D[3]=FNT_Digit[Second%10];
 }
 void fill_HHMM(){
-  D[0]=FNT_Digit[Hour/10];
-  D[1]=FNT_Digit[Hour%10];
-  D[2]=FNT_Digit[Minute/10];
-  D[3]=FNT_Digit[Minute%10];
-  if(Tic<5)D[1]=D[1]&FNT_dot;
+  DISP.D[0]=FNT_Digit[Hour/10];
+  DISP.D[1]=FNT_Digit[Hour%10];
+  DISP.D[2]=FNT_Digit[Minute/10];
+  DISP.D[3]=FNT_Digit[Minute%10];
+  if(Tic<5)DISP.D[1]=DISP.D[1]&FNT_dot;
 }
 void fill_MMSS(){
-  D[0]=FNT_Digit[Minute/10];
-  D[1]=FNT_Digit[Minute%10];
-  D[2]=FNT_Digit[Second/10];
-  D[3]=FNT_Digit[Second%10];
-  D[1]=D[1]&FNT_dot;
+  DISP.D[0]=FNT_Digit[Minute/10];
+  DISP.D[1]=FNT_Digit[Minute%10];
+  DISP.D[2]=FNT_Digit[Second/10];
+  DISP.D[3]=FNT_Digit[Second%10];
+  DISP.D[1]=DISP.D[1]&FNT_dot;
 }
 void fill_ddmm(){
-  D[0]=FNT_Digit[Day/10];
-  D[1]=FNT_Digit[Day%10];
-  D[2]=FNT_Digit[Month/10];
-  D[3]=FNT_Digit[Month%10];
-  D[1]=D[1]&FNT_dot;
+  DISP.D[0]=FNT_Digit[Day/10];
+  DISP.D[1]=FNT_Digit[Day%10];
+  DISP.D[2]=FNT_Digit[Month/10];
+  DISP.D[3]=FNT_Digit[Month%10];
+  DISP.D[1]=DISP.D[1]&FNT_dot;
 }
 void fill_mmYY(){
-  D[0]=FNT_Digit[Month/10];
-  D[1]=FNT_Digit[Month%10];
-  D[2]=FNT_Digit[Year/10%10];
-  D[3]=FNT_Digit[Year%10];
-  D[1]=D[1]&FNT_dot;
+  DISP.D[0]=FNT_Digit[Month/10];
+  DISP.D[1]=FNT_Digit[Month%10];
+  DISP.D[2]=FNT_Digit[Year/10%10];
+  DISP.D[3]=FNT_Digit[Year%10];
+  DISP.D[1]=DISP.D[1]&FNT_dot;
 }
 void fill_YYYY(){
-  D[0]=FNT_Digit[(Year+1900)/1000];
-  D[1]=FNT_Digit[(Year+1900)/100%10];
-  D[2]=FNT_Digit[(Year+1900)/10%10];
-  D[3]=FNT_Digit[(Year+1900)%10]&FNT_dot;
+  DISP.D[0]=FNT_Digit[(Year+1900)/1000];
+  DISP.D[1]=FNT_Digit[(Year+1900)/100%10];
+  DISP.D[2]=FNT_Digit[(Year+1900)/10%10];
+  DISP.D[3]=FNT_Digit[(Year+1900)%10]&FNT_dot;
 }
 void fill_W(){
   // DayofWeek 0-6 // 1 = Monday
-  // œÕ ¬“ —–, ◊“ œ“ - , - —¡ ¬—
+  // –ü–ù –í–¢ –°–†, –ß–¢ –ü–¢ - , - –°–ë –í–°
   if(Tic/4==0){
-    D[0]= ~((((DayofWeek==1)-1)&__A)|(((DayofWeek==2)-1)&__G)|(((DayofWeek==3)-1)&__D));
-    D[1]= ~((((DayofWeek==4)-1)&__A)|(((DayofWeek==5)-1)&__G));
-    D[2]= ~((((DayofWeek==6)-1)&__G)|(((DayofWeek==0)-1)&__D));
-    D[3]= FNT_week;
+    DISP.D[0]= ~((((DayofWeek==1)-1)&__A)|(((DayofWeek==2)-1)&__G)|(((DayofWeek==3)-1)&__D));
+    DISP.D[1]= ~((((DayofWeek==4)-1)&__A)|(((DayofWeek==5)-1)&__G));
+    DISP.D[2]= ~((((DayofWeek==6)-1)&__G)|(((DayofWeek==0)-1)&__D));
+    DISP.D[3]= FNT_week;
   }else{
-    // D[0]= FNT_Digit[DayofWeek]|FNT_dot;
-    D[0]= ~(__A|__G|__D);
-    D[1]= ~(__A|__G);
-    D[2]= ~(__G|__D);
-    D[3]= FNT_week;
+    // DISP.D[0]= FNT_Digit[DayofWeek]|FNT_dot;
+    DISP.D[0]= ~(__A|__G|__D);
+    DISP.D[1]= ~(__A|__G);
+    DISP.D[2]= ~(__G|__D);
+    DISP.D[3]= FNT_week;
   }
 }
 void fill_weekday(){
-  // ¡¬Õœ–—“◊
+  // –ë–í–ù–ü–†–°–¢–ß
   // 01234567
-  D[0]=FNT_blank;
-  D[1]=FNT_blank;
+  DISP.D[0]=FNT_blank;
+  DISP.D[1]=FNT_blank;
   switch(DayofWeek){
     case 1:
-    D[2]=FNT_WeekDays_rus[3];
-    D[3]=FNT_WeekDays_rus[2];
+    DISP.D[2]=FNT_WeekDays_rus[3];
+    DISP.D[3]=FNT_WeekDays_rus[2];
     break;
     case 2:
-    D[2]=FNT_WeekDays_rus[1];
-    D[3]=FNT_WeekDays_rus[6];
+    DISP.D[2]=FNT_WeekDays_rus[1];
+    DISP.D[3]=FNT_WeekDays_rus[6];
     break;
     case 3:
-    D[2]=FNT_WeekDays_rus[5];
-    D[3]=FNT_WeekDays_rus[4];
+    DISP.D[2]=FNT_WeekDays_rus[5];
+    DISP.D[3]=FNT_WeekDays_rus[4];
     break;
     case 4:
-    D[2]=FNT_WeekDays_rus[7];
-    D[3]=FNT_WeekDays_rus[6];
+    DISP.D[2]=FNT_WeekDays_rus[7];
+    DISP.D[3]=FNT_WeekDays_rus[6];
     break;
     case 5:
-    D[2]=FNT_WeekDays_rus[3];
-    D[3]=FNT_WeekDays_rus[6];
+    DISP.D[2]=FNT_WeekDays_rus[3];
+    DISP.D[3]=FNT_WeekDays_rus[6];
     break;
     case 6:
-    D[2]=FNT_WeekDays_rus[5];
-    D[3]=FNT_WeekDays_rus[0];
+    DISP.D[2]=FNT_WeekDays_rus[5];
+    DISP.D[3]=FNT_WeekDays_rus[0];
     break;
     case 0:
-    D[2]=FNT_WeekDays_rus[1];
-    D[3]=FNT_WeekDays_rus[5];
+    DISP.D[2]=FNT_WeekDays_rus[1];
+    DISP.D[3]=FNT_WeekDays_rus[5];
     break;
     default:
-    D[2]=FNT_minus;
-    D[3]=FNT_minus;
+    DISP.D[2]=FNT_minus;
+    DISP.D[3]=FNT_minus;
   }
 }
 
@@ -462,52 +473,129 @@ void fill_weekday(){
 void fill_currentTime(){
   char s[5];
   sprintf(s,"%2d",Second);
-  D[0]=FNT_Digit[s[0]-'0'];
-  D[1]=FNT_Digit[s[1]-'0'];
-  D[2]=FNT_Digit[s[2]-'0'];
-  D[3]=FNT_Digit[s[3]-'0'];
+  DISP.D[0]=FNT_Digit[s[0]-'0'];
+  DISP.D[1]=FNT_Digit[s[1]-'0'];
+  DISP.D[2]=FNT_Digit[s[2]-'0'];
+  DISP.D[3]=FNT_Digit[s[3]-'0'];
   // sprintf(s,"%2d",Minute);
-  // D[2]=s[0];
-  // D[3]=s[1];
+  // DISP.D[2]=s[0];
+  // DISP.D[3]=s[1];
   if(Tic/2==0){
-    D[1]&FNT_dot;
+    DISP.D[1]&FNT_dot;
   }
   Serial.println(Second);
 }
 
+void DISP_update(){
+  display(DISP.D);
+}
+void DISP_animate(){
+  display(DISP.AB[DISP.pos]);
+  if(DISP.pos++>4)DISP.pos=0;
+}
+void DISP_black(){
+  byte T[4]={FNT_blank,FNT_blank,FNT_blank,FNT_blank};
+  display(T);
+}
 // CLOCK
 // #define ticHz 490 // 490Hz
-#define ticHz 10 // 490Hz
-volatile word tic_tac=0; // 49 = 10Hz
+// #define ticHz 10 // 490Hz
+#define ticHz 1000
+volatile word tic_tac=0;
+volatile boolean toggle1 = 0;
 
-void tic(){
-  // if(tic_tac/2==0){
-  if(++Tic==10)Tic=0;
+void init_TimerINT(){
+  cli();//stop interrupts
+  //set timer1 interrupt at 1kHz
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;//initialize counter value to 0
+  // set timer count for 1khz increments
+  // OCR1A = 15624;// = (16*10^6) / (1*1024) - 1 (must be <65536)
+  OCR1A = 999;// = (8*10^6) / (1000*8) - 1
+  // OCR1A = 1999;// = (16*10^6) / (1000*8) - 1
+  //had to use 16 bit timer1 for this bc 1999>255, but could switch to timers 0 or 2 with larger prescaler
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS11 bit for 8 prescaler
+  TCCR1B |= (1 << CS11);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  sei();//allow interrupts
+}  
+
+ISR(TIMER1_COMPA_vect){//timer1 interrupt 8kHz toggles pin timerPin
+//generates pulse wave of frequency 8kHz/2 = 4kHz (takes two cycles for full wave- toggle high then toggle low)
+  if (toggle1){
+    digitalWrite(timerPin,HIGH);
+    toggle1 = 0;
+    // if(++Tic>=100)Tic=0;
+    if(++tic_tac>=ticHz){       tic_tac=0;
+      if(++Second>=60){         Second=0;
+        if(++Minute>=60){       Minute=0;
+          if(++Hour>=24){       Hour=0;
+            if(++DayofWeek>=7){ DayofWeek=0;
+            } if(++Day>31){     Day=0;
+              if(++Month>=12){  Month=0;
+                ++Year;
+    } } } } } }
+
+  }
+  else{
+    digitalWrite(timerPin,LOW);
+    toggle1 = 1;
+    Tic=tic_tac/100;
+  }
+}
+
+
+void timerINT(){
+  Serial.println(tic_tac);
+  digitalWrite(ledR,LOW);
+  if(++Tic>10)Tic=0;
+/*  // if(tic_tac/2==0){
   // }
-  if(++tic_tac>=ticHz){
-    tic_tac=0;
-    if(++Second>=60){Second=0;
-      if(++Minute>=60){Minute=0;
-        if(++Hour>=24){Hour=0;
-          if(++DayofWeek>=7){DayofWeek=0;
-          } if(++Day>31){Day=0;
-            if(++Month>=12){Month=0;
+  switch(Tic%3){
+    case 0:
+      if(DISP.pos>0){
+        // DISP_animate();
+      }else{
+        // DISP_update();
+      }
+      break;
+    // case 1:
+      // if(DISP.brightness<1)DISP_black();
+      // break;
+    // case 2:
+      // if(DISP.brightness<2)DISP_black();
+      // break;
+    }
+*/
+  if(++tic_tac>=ticHz){       tic_tac=0;
+    if(++Second>=60){         Second=0;
+      if(++Minute>=60){       Minute=0;
+        if(++Hour>=24){       Hour=0;
+          if(++DayofWeek>=7){ DayofWeek=0;
+          } if(++Day>31){     Day=0;
+            if(++Month>=12){  Month=0;
               ++Year;
-            } } } } } }
-          }
+  } } } } } }
+}
 
 
 // BUTTON
 
-          void buttonINT() {
-            button_state = !button_state;
-          }
+void buttonINT() {
+  button_state = !button_state;
+}
 
 // states
-          char state=0;
+char state=0;
+
 // setup
-          void setup(){
-            start = millis();
+
+void setup(){
+  start = millis();
   Serial.begin(9600);  //Begin serial communcation
   Serial.print("SETUP: ");
   pinMode(ledR, OUTPUT);
@@ -520,7 +608,8 @@ void tic(){
   pinMode(buttonPin, OUTPUT);
   // pinMode(buttonPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(buttonPin), buttonINT, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(timerPin), tic, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(timerPin),   timerINT, CHANGE);
+  init_TimerINT();
   Serial.print(".");
   delay(100);
 
@@ -534,8 +623,20 @@ void tic(){
   shiftOut(dataPin, clockPin, LSBFIRST, B01111110);
   digitalWrite(latchPin,HIGH);
   Serial.print(".");
-  delay(100);
+  // delay(100);
+  DISP.pos=0;
+  DISP.brightness=4;
   {
+    for(signed char i=9;i>=0;i--){
+      DISP.D[0]=FNT_Digit[i];
+      DISP.D[1]=FNT_Digit[i];
+      DISP.D[2]=FNT_Digit[i];
+      DISP.D[3]=FNT_Digit[i];
+      DISP_update();
+      // delay(100);
+    }
+  }
+/*  {
     for(signed char i=9;i>=0;i--){
       // digitalWrite(ledR, HIGH);
       D[0]=FNT_Digit[i];
@@ -548,7 +649,7 @@ void tic(){
       delay(50);
     }
   }
-  Serial.print(".");
+*/  Serial.print(".");
   // delay(1000);
   init_animation();
   Serial.print(".");
@@ -564,7 +665,7 @@ void tic(){
 
 // States
 #define States 5
-const char states[States]= {'s','a','w','W','Y'};
+const char states[States]= {'s','c','w','W','Y'};
 // const char states[States]= {'c','W','d','m','Y','s'};
 
 // main loop
@@ -588,34 +689,39 @@ void fillState(char s){
 }
 
 void loop(){
-  tic();
-  if(states[state]=='s'){
-    if(!animate.Active){
-      if(Tic==0){
-            animate.Active=true;
-            digitalWrite(ledR,LOW);
-            fill_SS();
-            animation_rotUp(~FNT_Digit[0],~FNT_Digit[1]);
-            // animation_rotUp(~FNT_Digit[Second%10],~FNT_Digit[Second%10+1]);
-            animate.pos=0;
-          }
-    }else{
-      D[3]=~animate.AB[animate.pos];
-      D[0]=FNT_Digit[animate.pos];
-      if(Tic%3==1){ // 0 1 2 , 3 4 5, 7 8 9
-        if(animate.pos++>4){animate.Active=false;}
-      }
-      // D[3]=~animate.AB[Tic/3];
-    }
-    display(D);
-  }
+  // timerINT();
+  // if(states[state]=='s'){
+  //   if(!animate.Active){
+  //     if(Tic==0){
+  //           animate.Active=true;
+  //           digitalWrite(ledR,LOW);
+  //           fill_SS();
+  //           animation_rotUp(~FNT_Digit[0],~FNT_Digit[1]);
+  //           // animation_rotUp(~FNT_Digit[Second%10],~FNT_Digit[Second%10+1]);
+  //           animate.pos=0;
+  //         }
+  //   }else{
+  //     D[3]=~animate.AB[animate.pos];
+  //     D[0]=FNT_Digit[animate.pos];
+  //     if(Tic%3==1){ // 0 1 2 , 3 4 5, 7 8 9
+  //       if(animate.pos++>4){animate.Active=false;}
+  //     }
+  //     // D[3]=~animate.AB[Tic/3];
+  //   }
+  //   display(D);
+  // }
   
   if(Tic==0){
     digitalWrite(ledG, HIGH);
     if(++DayofWeek>=7)DayofWeek=0;
     fillState(state);
-    display(D); 
-    delay(100);
+    // int t=millis();
+    // word t=Second;
+    // DISP_update();
+    // Serial.println(Second-t);
+    // Serial.println(millis());
+    // display(D); 
+    // delay(100);
   }
   // Serial.println("looping...");
   // Serial.println(tic_tac);
@@ -624,11 +730,18 @@ void loop(){
     digitalWrite(ledR,LOW);
     if(++state>=States)state=0;
     while(button_state==HIGH){
+      DISP_black();
+      Serial.println(tic_tac);
       delay(10);
     }
   }else{
-    // delay(10);
+    delay(25);
     digitalWrite(ledR, HIGH);
     digitalWrite(ledG, LOW);
   }
+
+  digitalWrite(ledR, HIGH);
+  digitalWrite(ledG, LOW);
+  DISP_update();
+  delay(100);
 }
