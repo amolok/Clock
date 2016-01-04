@@ -159,6 +159,21 @@ void init_animation(){
   animate.Active=0;
 }
 
+// display
+
+struct DSP
+{
+  byte D[4]={0,0,0,0};
+  byte AB[4][4];
+  byte pos;
+  byte brightness;
+  boolean update;
+};
+
+DSP DISP;
+
+byte D[4]={0,0,0,0}; // Display global
+
 // .ABCDEFG
 
 byte animation__shift_U(byte X){
@@ -194,8 +209,18 @@ void animation_rotDown(byte A, byte B){
   animate.AB[2] = animation__shift_D(animate.AB[1]) | (B & __C)<<1 | (B & __E)>>1 | (B & __G)<<6;
   animate.AB[3]=B;  
 }
-
-
+void DISP_transitionUp(byte A, byte B, byte cur){
+  DISP.AB[0][cur]= A;
+  DISP.AB[1][cur] = ~animation__shift_U(~A) | (~B & __A)>>3 ;
+  DISP.AB[2][cur] = ~animation__shift_U(~DISP.AB[1][cur]) | (~B & __B)>>1 | (~B & __F)<<1 | (~B & __G)<<3;
+  DISP.AB[3][cur]= B;
+}
+void DISP_hold(byte cur){
+  DISP.AB[0][cur]=DISP.D[cur];
+  DISP.AB[1][cur]=DISP.D[cur];
+  DISP.AB[2][cur]=DISP.D[cur];
+  DISP.AB[3][cur]=DISP.D[cur];
+}
 // globals
 unsigned long start;
 // uint16_t start;
@@ -208,19 +233,6 @@ volatile byte Day=       3;
 volatile byte DayofWeek= 3; // Sunday is day 0
 volatile byte Month=     1;     // Jan is month 0
 volatile byte Year=2016-1900;      // the Year minus 1900
-// display
-struct DSP
-{
-  byte D[4]={0,0,0,0};
-  byte AB[4][4];
-  byte pos;
-  byte brightness;
-  boolean update;
-};
-
-DSP DISP;
-
-byte D[4]={0,0,0,0}; // Display global
 
 void display(byte D[4]){
   digitalWrite(latchPin, LOW);
@@ -379,6 +391,14 @@ void fill_SS(){
   DISP.D[1]=FNT_blank;
   DISP.D[2]=FNT_Digit[Second/10];
   DISP.D[3]=FNT_Digit[Second%10];
+  DISP_transitionUp(FNT_Digit[Second%10],FNT_Digit[(Second+1)%10],3);
+  DISP_hold(0);
+  DISP_hold(1);
+  if(Second%10!=9)
+    DISP_hold(2);
+  else
+    DISP_transitionUp(FNT_Digit[Second/10],FNT_Digit[(Second/10+1)%10],2);
+  DISP.pos=1;
 }
 void fill_HHMM(){
   DISP.D[0]=FNT_Digit[Hour/10];
@@ -490,10 +510,6 @@ void fill_currentTime(){
 void DISP_update(){
   DISP.update=true;
 }
-void DISP_animate(){
-  display(DISP.AB[DISP.pos]);
-  if(DISP.pos++>4)DISP.pos=0;
-}
 void DISP_black(){
   byte T[4]={FNT_blank,FNT_blank,FNT_blank,FNT_blank};
   display(T);
@@ -556,24 +572,7 @@ void timerINT(){
   Serial.println(tic_tac);
   digitalWrite(ledR,LOW);
   if(++Tic>10)Tic=0;
-/*  // if(tic_tac/2==0){
-  // }
-  switch(Tic%3){
-    case 0:
-      if(DISP.pos>0){
-        // DISP_animate();
-      }else{
-        // DISP_update();
-      }
-      break;
-    // case 1:
-      // if(DISP.brightness<1)DISP_black();
-      // break;
-    // case 2:
-      // if(DISP.brightness<2)DISP_black();
-      // break;
-    }
-*/
+
   if(++tic_tac>=ticHz){       tic_tac=0;
     if(++Second>=60){         Second=0;
       if(++Minute>=60){       Minute=0;
@@ -692,43 +691,11 @@ void fillState(char s){
 }
 
 void loop(){
-  // timerINT();
-  // if(states[state]=='s'){
-  //   if(!animate.Active){
-  //     if(Tic==0){
-  //           animate.Active=true;
-  //           digitalWrite(ledR,LOW);
-  //           fill_SS();
-  //           animation_rotUp(~FNT_Digit[0],~FNT_Digit[1]);
-  //           // animation_rotUp(~FNT_Digit[Second%10],~FNT_Digit[Second%10+1]);
-  //           animate.pos=0;
-  //         }
-  //   }else{
-  //     D[3]=~animate.AB[animate.pos];
-  //     D[0]=FNT_Digit[animate.pos];
-  //     if(Tic%3==1){ // 0 1 2 , 3 4 5, 7 8 9
-  //       if(animate.pos++>4){animate.Active=false;}
-  //     }
-  //     // D[3]=~animate.AB[Tic/3];
-  //   }
-  //   display(D);
-  // }
-  
   if(Tic==0){
     digitalWrite(ledG, HIGH);
     if(++DayofWeek>=7)DayofWeek=0;
     fillState(state);
-    // int t=millis();
-    // word t=Second;
-    // DISP_update();
-    // Serial.println(Second-t);
-    // Serial.println(millis());
-    // display(D); 
-    // delay(100);
   }
-  // Serial.println("looping...");
-  // Serial.println(tic_tac);
-
   if(button_state==HIGH){
     digitalWrite(ledR,LOW);
     if(++state>=States)state=0;
@@ -738,16 +705,27 @@ void loop(){
       delay(10);
     }
   }else{
-    delay(25);
     digitalWrite(ledR, HIGH);
     digitalWrite(ledG, LOW);
   }
+  // simply update display
   if(DISP.update){
     DISP.update=false;
-    display(DISP.D);
+    if(DISP.pos==0){
+      display(DISP.D);
+    } else {
+      display(DISP.AB[DISP.pos++-1]);
+      if(DISP.pos>4){ // animate 1-4 AB[0..3]
+        DISP.D[0]=DISP.AB[3][0];
+        DISP.D[1]=DISP.AB[3][1];
+        DISP.D[2]=DISP.AB[3][2];
+        DISP.D[3]=DISP.AB[3][3];
+        display(DISP.D);
+        DISP.pos=0;
+      }
+    }
   }
   digitalWrite(ledR, HIGH);
   digitalWrite(ledG, LOW);
-  // DISP_update();
-  delay(25);
+  delay(33);
 }
