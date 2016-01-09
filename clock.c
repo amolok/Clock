@@ -1,6 +1,9 @@
 /*
 Code for https://123d.circuits.io/circuits/1421761-fun-with-74hc595/edit
+
+
 */
+
 // A#
 #define lightPin 0
 #define  tempPin 1
@@ -16,7 +19,10 @@ Code for https://123d.circuits.io/circuits/1421761-fun-with-74hc595/edit
 // #define clockPin 2
 // #define buttonPin 3
 volatile int button_state = LOW;
-// sensors
+
+// SENSORS
+// Temp.Sensor.pin
+
 #define normalize(a,min,max) (byte)((word)((a-min)*100)/(max-min))
 #define LightSensorMin 2
 #define LightSensorMax 381
@@ -26,6 +32,47 @@ volatile int button_state = LOW;
 #define TempSensorMax   358 // 125
 #define TempSensorMaxT  125
 #define normTemp(t) (signed int)((float)(t-TempSensorMin)/(TempSensorMax-TempSensorMin)*(TempSensorMaxT-TempSensorMinT)+TempSensorMinT)
+
+/*
+
+struct SensorParameters
+{
+  byte pin;
+  int minLevel, maxLevel, minValue, maxValue;
+  int comfortZone[2];
+  int alertZone[2];
+};
+
+struct Sensors
+{
+  // char type; // THPLSo
+  // byte id;
+  // byte pin;
+  SensorParameters Sensor;
+  int current; // current
+  int frq; // frequency of requests [s]
+  int avarage[12]; // data array for avarage
+  // int lastCheck
+  struct history
+  {
+    int MinToday, MaxToday;
+    int dayly[7];
+    int hourly[24];
+    int quarter[4];
+    int everyFive[3];
+    int everyMinute[5];
+  }; // 7+24+4+3+5+2 = 45*2 = 90b
+}; // 90+(12+1+1)*2+3 = 121b
+
+const SensorParameters tempSensor =     {1, 20,358, -40,125, 18,23, 16,27};
+// const SensorParameters humiditySensor = {2, 0,100,    0,100, 60,70, 50,80};
+const SensorParameters lightSensor =    {0, 2,381,    0,100, 60,80,  0,100};
+
+Sensors Temp     = {tempSensor, 0, 60*15};
+Sensors Humidity = {humiditySensor,  50, 60*15};
+*/
+
+
 // Fonts
 #define __A B01000000
 #define __B B00100000
@@ -117,15 +164,8 @@ const byte FNT_LightSensorAnimation[3]=
   B11110110,
   B10110110
 };
+
 /*
-struct SEN
-{
-  char id,// THPLSo
-  int cur, // current
-  int pre, // previous
-  int avg[10], // data array for avarage
-  int frq, // frequency of requests
-};
 struct SENque
 {
   int lastUpdate, // last update time
@@ -133,6 +173,7 @@ struct SENque
   // char sensor[Sensors], // sensors que
 };
 */
+
 // functions
 
 // ANIMATION
