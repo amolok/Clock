@@ -33,47 +33,8 @@ volatile int button_state = LOW;
 #define TempSensorMaxT  125
 #define normTemp(t) (signed int)((float)(t-TempSensorMin)/(TempSensorMax-TempSensorMin)*(TempSensorMaxT-TempSensorMinT)+TempSensorMinT)
 
-/*
-
-struct SensorParameters
-{
-  byte pin;
-  int minLevel, maxLevel, minValue, maxValue;
-  int comfortZone[2];
-  int alertZone[2];
-};
-
-struct Sensors
-{
-  // char type; // THPLSo
-  // byte id;
-  // byte pin;
-  SensorParameters Sensor;
-  int current; // current
-  int frq; // frequency of requests [s]
-  int avarage[12]; // data array for avarage
-  // int lastCheck
-  struct history
-  {
-    int MinToday, MaxToday;
-    int dayly[7];
-    int hourly[24];
-    int quarter[4];
-    int everyFive[3];
-    int everyMinute[5];
-  }; // 7+24+4+3+5+2 = 45*2 = 90b
-}; // 90+(12+1+1)*2+3 = 121b
-
-const SensorParameters tempSensor =     {1, 20,358, -40,125, 18,23, 16,27};
-// const SensorParameters humiditySensor = {2, 0,100,    0,100, 60,70, 50,80};
-const SensorParameters lightSensor =    {0, 2,381,    0,100, 60,80,  0,100};
-
-Sensors Temp     = {tempSensor, 0, 60*15};
-Sensors Humidity = {humiditySensor,  50, 60*15};
-*/
-
-
 // Fonts
+
 #define __A B01000000
 #define __B B00100000
 #define __C B00010000
@@ -165,14 +126,7 @@ const byte FNT_LightSensorAnimation[3]=
   B10110110
 };
 
-/*
-struct SENque
-{
-  int lastUpdate, // last update time
-  int  timer[Sensors], // timer que
-  // char sensor[Sensors], // sensors que
-};
-*/
+
 
 // functions
 
@@ -250,7 +204,7 @@ void animation_rotDown(byte A, byte B){
   animate.AB[2] = animation__shift_D(animate.AB[1]) | (B & __C)<<1 | (B & __E)>>1 | (B & __G)<<6;
   animate.AB[3]=B;  
 }
-void DISP_transitionUp(byte A, byte B, byte cur){
+void DISP_transitionUp(byte cur, byte A, byte B){
   DISP.AB[0][cur]= A;
   DISP.AB[1][cur] = ~animation__shift_U(~A) | (~B & __A)>>3 ;
   DISP.AB[2][cur] = ~animation__shift_U(~DISP.AB[1][cur]) | (~B & __B)>>1 | (~B & __F)<<1 | (~B & __G)<<3;
@@ -271,9 +225,9 @@ volatile byte Hour=      15;
 volatile byte Minute=    6;
 volatile byte Second=    1;
 volatile byte Day=       3;
-volatile byte DayofWeek= 3; // Sunday is day 0
-volatile byte Month=     1;     // Jan is month 0
-volatile byte Year=2016-1900;      // the Year minus 1900
+volatile byte DayofWeek= 3;   // Sunday is day 0
+volatile byte Month=     1;   // Jan is month 0
+volatile byte Year=2016-1900; // the Year minus 1900
 
 void display(byte D[4]){
   digitalWrite(latchPin, LOW);
@@ -298,59 +252,24 @@ void print_sens(byte id, signed int x){
   disp[0]=FNT_Sensor[id];
   display(disp);
 }
+
 void disp_light(int l){
   byte disp[4];
   byte t = normLight(l);
   Serial.print("L: ");
   Serial.print(t);
   Serial.println("%%");
-/*  if(t<25){
-    disp[1]=FNT_LightSensorAnimation[0];
-    disp[2]=FNT_LightSensorAnimation[0];
-    disp[3]=FNT_LightSensorAnimation[0];
-  }
-  if(t<5){
-    disp[1]=FNT_dot;
-  }
-  if(t<10){
-    disp[2]=FNT_dot;
-  }
-  if(t<15){
-    disp[3]=FNT_dot;
-  }
-  if(t>=25){
-    disp[1]=FNT_LightSensorAnimation[0];
-    disp[2]=FNT_LightSensorAnimation[0];
-    disp[3]=FNT_LightSensorAnimation[0];
-  }
-  if(t>30){
-    disp[3]=FNT_LightSensorAnimation[1];
-  }
-  if(t>40){
-    disp[2]=FNT_LightSensorAnimation[1];
-  }
-  if(t>50){
-    disp[3]=FNT_LightSensorAnimation[2]; // 123
-  }
-  if(t>75){
-    disp[2]=FNT_LightSensorAnimation[2];
-  }
-  if(t>90){
-    disp[1]=FNT_LightSensorAnimation[2];
-    disp[2]=FNT_LightSensorAnimation[2];
-    disp[3]=FNT_LightSensorAnimation[2];
-  }
-*/
   disp[0]=FNT_Sensor[LightSensor_id];
   disp[1]=FNT_blank;
   disp[2]=FNT_blank;
   disp[3]=FNT_blank;
-  if(t>5)disp[1]=FNT_LightSensorAnimation[0];
+  if(t>5) disp[1]=FNT_LightSensorAnimation[0];
   if(t>33)disp[2]=FNT_LightSensorAnimation[1];
   if(t>66)disp[3]=FNT_LightSensorAnimation[2];
   if(t>95)disp[2]=FNT_LightSensorAnimation[2];
   display(disp);
 }
+
 /*
 void disp_temp(int t){
   byte disp[4];
@@ -361,84 +280,27 @@ void disp_temp(int t){
 }
 */
 
-// demo
-void demo_light(){
-  int l=analogRead(lightPin);
-  // Serial.print("L=");
-  // Serial.println(l);
-  analogWrite(ledR, l/4);
-  // disp_light(l);
-  print_sens(LightSensor_id, normLight(l));
-  // print_sens(LightSensor_id, l);
-}
-void demo_temp(){
-  signed int t=analogRead(tempPin);
-  Serial.print("T=");
-  Serial.print(analogRead(tempPin));
-  Serial.print(" = ");
-  Serial.println(normTemp(t));
-  print_sens(TempSensor_id, normTemp(t));
-}
-void demo_time(){
-  byte disp[4]={FNT_minus,FNT_minus&FNT_dot,FNT_minus,FNT_minus};
-  char string[5];
-  unsigned long t = millis()-start;
-  // uint16_t t = start- (uint16_t)millis();
-  // uint16_t t = now();
-  Serial.println(t);
-  sprintf(string, "%4d", t/1000);
-  // if(t%100==0)timerINT();
-  for(byte i=0;i<4;i++){
-    if((string[i] >= '0')&&(string[i] <='9')) disp[i]=FNT_Digit[(byte)string[i]-'0'];
-    else
-      disp[i]=FNT_Digit[0];
-  }
-  display(disp);
-}
-void demo_alphabet(){
-  for(byte i=0;i<sizeof(FNT_Alphabet);i++){
-    D[0]=FNT_Alphabet[i];
-    D[1]=((i>sizeof(FNT_Alphabet)+1)-1)&FNT_Alphabet[i+1];
-    D[2]=((i>sizeof(FNT_Alphabet)+2)-1)&FNT_Alphabet[i+2];
-    D[3]=((i>sizeof(FNT_Alphabet)+3)-1)&FNT_Alphabet[i+3];
-    display(D);
-    if(button_state==HIGH)return; // !!!: is it correct?
-    delay(500);
-  }
-}
-void demo_animation(){
-  for(byte i=0;i<10;i++){
-    // D[1]=FNT_Digit[i+1];
-    D[2]=FNT_blank;
-    animation_rotUp(~FNT_Digit[i],~FNT_Digit[(i+1)%10]);
-    // animation_rotUp(~FNT_minus,~FNT_Digit[0]);
-    // animation_rotUp(~FNT_Digit[i],~FNT_minus);
-    D[0]=~animate.AB[0];
-    // D[1]=~animation__shift_U(~D[0]);
-    D[1]=~animate.AB[3];
-    // D[1]=~animate.AB[1];
-    // D[3]=~animate.AB[3];
-    // D[2]=~animation__shift_D(~D[3]);
-    // D[2]=~animate.AB[2];
-    for (int i = 0; i < 4; ++i) {D[3]=~animate.AB[i]; display(D); delay(250);}
-    display(D);
-    delay(1000);
-  }
-}
-
 // DISPLAY buffer
-void fill_SS(){
-  DISP.D[0]=FNT_blank;
-  DISP.D[1]=FNT_blank;
+void fill_dot(){
+  DISP.D[1]=DISP.D[1]&FNT_dot;
+  DISP.AB[0][1]=DISP.AB[0][1]&FNT_dot;
+  DISP.AB[1][1]=DISP.AB[1][1]&FNT_dot;
+}
+void fill_ss(){
   DISP.D[2]=FNT_Digit[Second/10];
   DISP.D[3]=FNT_Digit[Second%10];
-  DISP_transitionUp(FNT_Digit[Second%10],FNT_Digit[(Second+1)%10],3);
-  DISP_hold(0);
-  DISP_hold(1);
+  DISP_transitionUp(  3, FNT_Digit[Second%10], FNT_Digit[(Second+1)%10]);
   if(Second%10!=9)
     DISP_hold(2);
   else
-    DISP_transitionUp(FNT_Digit[Second/10],FNT_Digit[(Second/10+1)%10],2);
+    DISP_transitionUp(2, FNT_Digit[Second/10], FNT_Digit[(Second/10+1)%10]);
+}
+void fill_SS(){
+  DISP.D[0]=FNT_blank;
+  DISP.D[1]=FNT_blank;
+  DISP_hold(0);
+  DISP_hold(1);
+  fill_ss();
   DISP.pos=1;
 }
 void fill_HHMM(){
@@ -451,8 +313,9 @@ void fill_HHMM(){
 void fill_MMSS(){
   DISP.D[0]=FNT_Digit[Minute/10];
   DISP.D[1]=FNT_Digit[Minute%10];
-  DISP.D[2]=FNT_Digit[Second/10];
-  DISP.D[3]=FNT_Digit[Second%10];
+  DISP_hold(0);
+  DISP_hold(1);
+  fill_ss();
   DISP.D[1]=DISP.D[1]&FNT_dot;
 }
 void fill_ddmm(){
@@ -529,23 +392,6 @@ void fill_weekday(){
     DISP.D[2]=FNT_minus;
     DISP.D[3]=FNT_minus;
   }
-}
-
-
-void fill_currentTime(){
-  char s[5];
-  sprintf(s,"%2d",Second);
-  DISP.D[0]=FNT_Digit[s[0]-'0'];
-  DISP.D[1]=FNT_Digit[s[1]-'0'];
-  DISP.D[2]=FNT_Digit[s[2]-'0'];
-  DISP.D[3]=FNT_Digit[s[3]-'0'];
-  // sprintf(s,"%2d",Minute);
-  // DISP.D[2]=s[0];
-  // DISP.D[3]=s[1];
-  if(Tic/2==0){
-    DISP.D[1]&FNT_dot;
-  }
-  Serial.println(Second);
 }
 
 void DISP_update(){
@@ -715,10 +561,10 @@ const char states[States]= {'s','c','w','W','Y'};
 
 void fillState(char s){
   switch(states[s]){
-    case 'L': demo_light(); break;
-    case 'T': demo_temp(); break;
-    case 't': demo_time(); break;
-    case 'a': demo_animation(); break;
+    // case 'L': demo_light(); break;
+    // case 'T': demo_temp(); break;
+    // case 't': demo_time(); break;
+    // case 'a': demo_animation(); break;
     // case 'a': demo_alphabet(); break;
     case 'c': fill_HHMM(); break;
     case 'M': fill_MMSS(); break;
