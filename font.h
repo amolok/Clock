@@ -1,5 +1,5 @@
-#ifndef __font_
-#define __font_
+#ifndef __font__
+#define __font__
 
 // Fonts
 
@@ -12,85 +12,85 @@
 #define __G B00000001
 #define __p B10000000
 #define FNT_blank B00000000
-#define FNT_minus B00000001
+#define FNT_minus B01000000
 #define FNT_dot __p
 #define FNT_grad B01100011
-#define FNT_week B00000110
+#define FNT_week B00110000
 
 struct FNT
 {
   const byte blank = B00000000; // 
-  const byte minus = B00000001; // -
-  const byte week  = B00000110; //
+  const byte minus = B01000000; // -
+  const byte week  = B00110000; //
   const byte grad  = B01100011; // °
-  const byte celsius=B00110001; // C
+  const byte celsius=B01000110; // C
   const byte dot   = __p; // .
   const byte trpile= __A|__D|__G;
   const byte d[10]=
-  {// ABCDEFG
-    B01111110, //0
-    B00110000, //1
-    B01101101, //2
-    B01111001, //3
-    B00110011, //4
-    B01011011, //5
-    B01011111, //6
-    B01110000, //7
+  {// GFEDCBA
+    B00111111, //0
+    B00000110, //1
+    B01011011, //2
+    B01001111, //3
+    B01100110, //4
+    B01101101, //5
+    B01111101, //6
+    B00000111, //7
     B01111111, //8
-    B01111011  //9
+    B01101111  //9
   };
   const byte AbC[26]=
   {
     B01110111, // A
-    B00011111, // b
-    B01001110, // C
-    B00111101, // d
-    B01001111, // E
-    B01000111, // F
-    B01011110, // G
-    B00110111, // H
-    B00110000, // I
-    B00111000, // J
-    B00000111, // k
-    B00001110, // L
-    B00001001, // m
-    B00010101, // n
-    B00011101, // o
-    B01100111, // p
-    B01110011, // q
-    B00000101, // r
-    B01011011, // s
-    B00001111, // t
+    B01111100, // b
+    B00111001, // C
+    B01011110, // d
+    B01111001, // E
+    B01110001, // F
+    B00111101, // G
+    B01110110, // H
+    B00000110, // I
+    B00001110, // J
+    B01110000, // k
+    B00111000, // L
+    B01001000, // m
+    B01010100, // n
+    B01011100, // o
+    B01110011, // p
+    B01100111, // q
+    B01010000, // r
+    B01101101, // s
+    B01111000, // t
     B00011100, // u
     B00111110, // v
-    B00111111, // w
-    B00010011, // x
-    B00110011, // Y
-    B01101101  // z
+    B01111110, // w
+    B01100100, // x
+    B01100110, // Y
+    B01011011  // z
   };
   const byte rusWeekDays[8]=
   { // ПН ВТ СР ЧТ ПТ СБ ВС = БВНПРСТЧ
-    B01011111, // Б
+    B01111101, // Б
     B01111111, // В
-    B00110111, // Н
-    B01110110, // П
-    B01100111, // Р
-    B01001110, // С
-    B01110000, // Т
-    B00110011  // Ч
+    B01110110, // Н
+    B00110111, // П
+    B01110011, // Р
+    B00111001, // С
+    B00000111, // Т
+    B01100110  // Ч
   };
   struct Sun
   {
     const byte rise[4]={
       B00001000,
-      B00001001,
-      B00011101,
+      B01001000,
+      B01011100,
       B01101011,
     };
     const byte set[4]={
       B01101011,      
-      B00011101,
-      B00001001,
+      B01011100,
+      B01001000,
       B00001000,
     };
   };
@@ -98,25 +98,25 @@ struct FNT
   {
     struct Temp
     {
-      const byte ico = B10001111; // t.
+      const byte ico = B11111000; // t.
       const byte sign= B01100011; // °
       const byte rise[4]={
         B00000000,
         B00001000,
-        B00011101,
+        B01011100,
         B01100011 
       };
       const byte fall[4]={
         B01100011,
-        B00011101,
+        B01011100,
         B00001000,
         B01100011 
       }
     };
     struct Humidity
     {
-      const byte ico = B10110111; // H.
-      const byte sign[2] = { B01100011, B00011101 }; // %
+      const byte ico = B11110110; // H.
+      const byte sign[2] = { B01100011, B01011100 }; // %
       const byte rise[2][4]={
         {
           B00000000,
@@ -125,9 +125,9 @@ struct FNT
           B01100011,
         },{
           B00000000,
-          B00011101,
-          B00011101,
-          B00011101,
+          B01011100,
+          B01011100,
+          B01011100,
         }
       };
       const byte fall[2][4]={
@@ -137,27 +137,27 @@ struct FNT
           B00000000,
           B01100011,
         },{
-          B00011101,
-          B00011101,
+          B01011100,
+          B01011100,
           B00000000,
-          B00011101,
+          B01011100,
         }
       };
       struct Pressure
       {
-      const byte ico = B11100111; // P.
-      const byte sign= B00001001; // m
+      const byte ico = B11110011; // P.
+      const byte sign= B01001000; // m
       const byte rise[4] = {
         B00001000,
-        B00001001,
+        B01001000,
         B01001001,
-        B00001001,
+        B01001000,
       };
       const byte fall[4] = {
-        B01000000,
         B00000001,
+        B01000000,
         B00001000,
-        B00001001,
+        B01001000,
       };
       struct CO2
       {
@@ -167,26 +167,26 @@ struct FNT
     };
     struct Light
     {
-      const byte ico = B10001110; // L.
-      // const byte sign= B10001110; // 
+      const byte ico = B10111000; // L.
+      // const byte sign= B10111000; // 
     };
   };
   struct level
   {
     const byte v3[3]={
       B00001000,
-      B00001001,
+      B01001000,
       B01001001,
     };
     const byte l3[3]={
       B00001000,
-      B00000001,
-      B00100000,
+      B01000000,
+      B00000010,
     };
     const byte sound[4]={
-      B00000001,
+      B01000000,
       B01000001,
-      B00001001,
+      B01001000,
       B01001001,
     };
   };

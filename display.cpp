@@ -1,3 +1,5 @@
+#include font.h
+
 extern "C" {
   typedef void (*callbackFunction)(void);
 }
@@ -60,9 +62,9 @@ void transition(callbackFunction fxFunction){
   if(fxFunction)
     fxFunction(_AB[0][3],_AB[1][3]);
   else
-    VPcut();
+    cut();
 };
-void VPcut(){ // copy V to P
+void cut(){ // copy V to P
   for(byte i=0;i<4;i++){
     _AB[0][i][0]=_AB[1][i][0];
     _AB[0][i][1]=_AB[1][i][1];
@@ -246,7 +248,7 @@ void hold(byte D[4]){
 //
 // Text writing
 //
-char DChar(char c){ // return char ledmap from char code
+char DChar(char c){ // return LED-map from character code
   if((c>='0')||(c<='9'))
     return F.d[c-'0'];
   if((c>='A'||(c<='Z')))

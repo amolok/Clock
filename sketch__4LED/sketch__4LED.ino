@@ -6,7 +6,7 @@
 #define DIO 3
 
 // The amount of time (in milliseconds) between tests
-#define TEST_DELAY   300
+#define TEST_DELAY   100
 
 const uint8_t SEG_DONE[] = {
   SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,           // d
@@ -17,31 +17,35 @@ const uint8_t SEG_DONE[] = {
 
 TM1637Display display(CLK, DIO);
 
+
+
+
+
 void setup()
 {
   Serial.begin(9600);
   Serial.println(F("Internal Temperature Sensor"));
   int k;
-  uint8_t data[] = { 0xff, 0xff, 0xff, 0xff };
+  uint8_t D[] = { 0xff, 0xff, 0xff, 0xff };
   display.setBrightness(0x0f);
   // All segments on
-  display.setSegments(data);
+  display.setSegments(D);
   delay(TEST_DELAY);
-  data[0]=B00111001;
-  data[1]=B10001001;
-  data[2]=B00001001;
-  data[3]=B00001111;
-  display.setSegments(data);
+  D[0]=B00111001;
+  D[1]=B10001001;
+  D[2]=B00001001;
+  D[3]=B00001111;
+  display.setSegments(D);
   
 //  while(true) {
     for(k = 4; k < 16; k++) {
       display.setBrightness(k); 
-      display.setSegments(data);
+      display.setSegments(D);
       delay(TEST_DELAY); 
     }
     for(k = 15; k >= 4; k--) {
       display.setBrightness(k); 
-      display.setSegments(data);
+      display.setSegments(D);
       delay(TEST_DELAY); 
     }
 //  }
