@@ -1,25 +1,20 @@
-#include <Arduino.h>
-#include <TM1637Display.h>
+#include <StandardCplusplus.h>
+//#include <system_configuration.h>
+//#include <unwind-cxx.h>
+//#include <utility.h>
 
-// Module connection pins (Digital Pins)
-#define CLK 2
-#define DIO 3
+#include <Arduino.h>
+#include <vector>
+//#include <TM1637Display.h>
+#include "display.h"
+//#include "font.h"
 
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   100
 
-const uint8_t SEG_DONE[] = {
-  SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,           // d
-  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // O
-  SEG_C | SEG_E | SEG_G,                           // n
-  SEG_A | SEG_D | SEG_E | SEG_F | SEG_G            // E
-};
+Display4LED2 disp;
 
-TM1637Display display(CLK, DIO);
-
-
-
-
+//FNT F;
 
 void setup()
 {
@@ -27,42 +22,40 @@ void setup()
   Serial.println(F("Internal Temperature Sensor"));
   int k;
   uint8_t D[] = { 0xff, 0xff, 0xff, 0xff };
-  display.setBrightness(0x0f);
   // All segments on
-  display.setSegments(D);
+  disp.setSegments(D);
   delay(TEST_DELAY);
   D[0]=B00111001;
   D[1]=B10001001;
   D[2]=B00001001;
   D[3]=B00001111;
-  display.setSegments(D);
+  disp.setSegments(D);
+//  disp.update();
   
 //  while(true) {
     for(k = 4; k < 16; k++) {
-      display.setBrightness(k); 
-      display.setSegments(D);
+      disp.setBrightness(k); 
+      disp.setSegments(D);
       delay(TEST_DELAY); 
     }
     for(k = 15; k >= 4; k--) {
-      display.setBrightness(k); 
-      display.setSegments(D);
+      disp.setBrightness(k); 
+      disp.setSegments(D);
       delay(TEST_DELAY); 
     }
 //  }
+  disp.setBrightness(0x08);
 }
 
 void loop()
 {
-  uint8_t D[] = {0xff,0xff,0xff,0xff};
-  int k;
-  display.setBrightness(0x0f);
-  // Serial.println(GetTemp(), 1);
-  display.showNumberDec((int)GetTemp(),false,2,0);
-  D[0]=B01100011;
-  D[1]=B00000000;
-  display.setSegments(D,2,2);
-  delay(100);
+  disp._DD(0,(int)GetTemp());
+  disp._hold(2, B01100011);
+  disp._hold(3, B00000000);
+  disp.update();
+  delay(250);
 }
+
 
 double GetTemp(void)
 {
@@ -96,6 +89,4 @@ double GetTemp(void)
   // The returned temperature is in degrees Celcius.
   return (t);
 }
-
-
 
