@@ -72,9 +72,9 @@ struct FNT
     B01011011  // z
   };
 
-/*
   const uint8_t rusWeekDays[8]=
-  { // ПН ВТ СР ЧТ ПТ СБ ВС = БВНПРСТЧ
+  // ПН ВТ СР ЧТ ПТ СБ ВС = БВНПРСТЧ
+  { 
     B01111101, // Б
     B01111111, // В
     B01110110, // Н
@@ -84,7 +84,7 @@ struct FNT
     B00000111, // Т
     B01100110  // Ч
   };
-  struct Sun
+  struct sSun
   {
     const uint8_t rise[4]={
       B00001000,
@@ -99,9 +99,10 @@ struct FNT
       B00001000,
     };
   };
-  struct Sensor
+  sSun Sun;
+  struct sSensor
   {
-    struct Temp
+    struct sTemp
     {
       const uint8_t ico = B11111000; // t.
       const uint8_t sign= B01100011; // °
@@ -114,10 +115,14 @@ struct FNT
       const uint8_t fall[4]={
         B01100011,
         B01011100,
-        B00001000,
+        B00001001,
         B01100011 
       };
     };
+    sTemp Temp;
+  };
+  sSensor Sensor;
+    /*
     struct Humidity
     {
       const uint8_t ico = B11110110; // H.
@@ -197,6 +202,7 @@ struct FNT
   };
 */
 };
+
+extern FNT F;
+
 #endif
-
-

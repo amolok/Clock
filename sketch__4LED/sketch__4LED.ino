@@ -4,56 +4,113 @@
 //#include <utility.h>
 
 #include <Arduino.h>
-#include <vector>
+// #include <vector>
 //#include <TM1637Display.h>
-#include "display.h"
-//#include "font.h"
+#include "settings.h"
+#include "font.h"
+#ifndef FNT
+FNT F;
+#endif
+#include "display.h" 
+#ifndef D
+Display4LED2 D;
+#endif
+// #include "clock.h" 
+#include "machine.h"
+
+uint8_t Hour=      15;
+uint8_t Minute=    6;
+uint8_t Second=    1;
+uint8_t Day=       3;
+uint8_t DayofWeek= 3;   // Sunday is day 0
+uint8_t Month=     1;   // Jan is month 0
+uint8_t Year=2016-1900; // the Year minus 1900
+
+Settings.Day.Hour=9;
+Settings.Day.Minute=0;
+Settings.Night.Hour=21;
+Settings.Night.Minute=0;
 
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   100
 
-Display4LED2 disp;
-
-//FNT F;
 
 void setup()
 {
   Serial.begin(9600);
   Serial.println(F("Internal Temperature Sensor"));
   int k;
-  uint8_t D[] = { 0xff, 0xff, 0xff, 0xff };
+  uint8_t _D[] = { 0xff, 0xff, 0xff, 0xff };
   // All segments on
-  disp.setSegments(D);
+  D.setSegments(_D);
   delay(TEST_DELAY);
-  D[0]=B00111001;
-  D[1]=B10001001;
-  D[2]=B00001001;
-  D[3]=B00001111;
-  disp.setSegments(D);
-//  disp.update();
+  _D[0]=B00111001;
+  _D[1]=B10001001;
+  _D[2]=B00001001;
+  _D[3]=B00001111;
+  D.setSegments(_D);
+//  D.update();
   
 //  while(true) {
     for(k = 4; k < 16; k++) {
-      disp.setBrightness(k); 
-      disp.setSegments(D);
+      D.setBrightness(k); 
+      D.setSegments(_D);
       delay(TEST_DELAY); 
     }
     for(k = 15; k >= 4; k--) {
-      disp.setBrightness(k); 
-      disp.setSegments(D);
+      D.setBrightness(k); 
+      D.setSegments(_D);
       delay(TEST_DELAY); 
     }
 //  }
-  disp.setBrightness(0x08);
+  D.setBrightness(0x08);
+}
+
+int prevTemp=0;
+int _c=0;
+
+void showTemp(){
+  // FNT F;
+  int temp=(int)GetTemp();
+  D._DD(0,temp);
+  if(temp!=prevTemp){
+    if(temp>prevTemp){
+      D._ab(2,F.Sensor.Temp.rise);
+    }else{
+      D._ab(2,F.Sensor.Temp.fall);
+    }
+    prevTemp=temp;
+  }else {
+  D._hold(2, F.Sensor.Temp.sign);
+  }
+  
+  D._hold(3, F.blank);
+
+  for(uint8_t i=0;i<4;i++){
+  D.update();
+  delay(250);
+  }  
+}
+
+void showTime(){
+  // FNT F;
+  D._DD(0,12);
+  D._DD(2,34);
+  D.blink(1,F.dot);
+  
+  for(uint8_t i=0;i<4;i++){
+  D.update();
+  delay(250);
+  }  
 }
 
 void loop()
 {
-  disp._DD(0,(int)GetTemp());
-  disp._hold(2, B01100011);
-  disp._hold(3, B00000000);
-  disp.update();
-  delay(250);
+//  if(_c++ /3%2==0){
+    showTemp();
+//  }else{
+//    showTime();
+//  }
 }
 
 

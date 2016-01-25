@@ -1,12 +1,11 @@
 #ifndef __display__
 #define __display__
+#include <TM1637Display.h>
 #include <vector>
 #include <string>
-//#include "font.h"
 // Module connection pins (Digital Pins)
 #define CLK 2
 #define DIO 3
-
 
 extern "C" {
   typedef void (*callbackFunction)(void);
@@ -51,7 +50,7 @@ void setRefresh(callbackFunction newFunction);
 //void cut(); // copy V to P
 // [!   ] one position animation
 void _p(uint8_t f, uint8_t D[4]); // put display to frame
-void _ab(uint8_t p, uint8_t AB[4]); // put animation to frames
+void _ab(uint8_t p, const uint8_t AB[4]); // put animation to frames
 // one position fx:
 void _up(uint8_t p, uint8_t A, uint8_t B);
 void _down(uint8_t p, uint8_t A, uint8_t B);

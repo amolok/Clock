@@ -1,12 +1,9 @@
-//#include <Arduino.h>
-#include <TM1637Display.h>
 #include "display.h"
 #include "font.h"
 /*
     A A'
     B B'
 */
-FNT F;
 
 TM1637Display display(CLK, DIO);
 
@@ -72,7 +69,7 @@ void Display4LED2::_p(uint8_t f, uint8_t D[4]){
   _AB[_b][f][3] = D[3];
 };
 // put animation to frames
-void Display4LED2::_ab(uint8_t p, uint8_t AB[4]){ 
+void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){ 
   _AB[_b][0][p]= AB[0];
   _AB[_b][1][p]= AB[1];
   _AB[_b][2][p]= AB[2];
@@ -252,11 +249,11 @@ void Display4LED2::update(){// 1/4 s
 
 // display animation
 void Display4LED2::animator(){// 1/4 s
-  display(_f);
-  if(_f++>3){// 1s
+  display(_f++);
+  if(_f>3){// 1s
     if(_refreshFunc){
       uint8_t tb=_b; _b=0; // all Refresh Function will write to VIEW
-      if(_refreshFunc)_refreshFunc();
+      _refreshFunc();
       _b=tb;
     }
     _f=0;
@@ -264,6 +261,8 @@ void Display4LED2::animator(){// 1/4 s
 };
 // display one frame -- update function -- PROG
 void Display4LED2::display(uint8_t f){
+//  _D(3,f);
+//  setBrightness((uint8_t)(f<<1)+8);
   print((_AB[0][f]));
 };
 void Display4LED2::setSegments(const uint8_t segments[4]){
@@ -365,7 +364,4 @@ void scroll(string s, callbackFunction next, char fx){
   _next=next; // chain next
 };
 */
-
-
-
 
