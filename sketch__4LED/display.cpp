@@ -36,22 +36,36 @@ uint8_t _shift_L(uint8_t X){
 void Display4LED2::setRefresh(callbackFunction newFunction){
   _refreshFunc = newFunction;
 };
-
+void Display4LED2::drawToBuffer(){
+  _b=1;
+};
 /* 
   Transition effects 
 
   Animation: AB: f=[0-4]
   Transition: PV: PROG VIEW 
+*/
 
-
-void Display4LED2::transition(callbackFunction fxFunction){
-  if(fxFunction)
-    fxFunction(_AB[0][3],_AB[1][3]);
-  else
-    cut();
+void Display4LED2::transition(transition_fx x){
+  switch(x){
+    case fxUp:
+    up(_AB[0][3],_AB[1][3]);
+    break;
+    case fxDown:
+    down(_AB[0][3],_AB[1][3]);
+    break;
+    case fxLeft:
+    left(_AB[0][3],_AB[1][3]);
+    break;
+    case fxRight:
+    right(_AB[0][3],_AB[1][3]);
+    break;
+    default:
+    _cut();
+  }
 };
 // copy V to P
-void cut(){
+void Display4LED2::_cut(){
   for(uint8_t i=0;i<4;i++){
     _AB[0][i][0]=_AB[1][i][0];
     _AB[0][i][1]=_AB[1][i][1];
@@ -59,7 +73,6 @@ void cut(){
     _AB[0][i][3]=_AB[1][i][3];
   }
 };
-*/
 // [!   ] one position animation
 // put display to frame
 void Display4LED2::_p(uint8_t f, uint8_t D[4]){

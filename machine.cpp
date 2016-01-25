@@ -9,8 +9,8 @@
 
 extern FNT F;
 extern Display4LED2 D;
-extern sSettings Settings;
 extern uint8_t Year, Month, Day, DayofWeek, Hour, Minute, Second;
+extern sSettings Settings;
 
 bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
 {
@@ -59,12 +59,12 @@ void Machine::_fallBack(){
 };
 
 
-void Machine::addState(void (Machine::*state)(void) , word d, callbackFunction fx){
+void Machine::addState(void (Machine::*state)(void) , word d, void (Machine::*fx)(void)){
   stateStruct s;
   s.fn=state;
   s.timer=d;
   s.fx = fx;
-  _states.push_front(s);
+  _states.insert(_states.begin(), s);
 };
 
 void Machine::nextState()
@@ -76,7 +76,8 @@ void Machine::nextState()
       _states.pop_back();
       _c = 0;
 // initializing 
-      D.drawToBuffer(_state.fn);
+      D.drawToBuffer();
+      _state.fn();
 // can be NULL
       D.transition(_state.fx); 
     }else{
@@ -102,12 +103,14 @@ void Machine::Machine(){
   addState(_defaultState, 0);
   Clock.set(update);
 };
-void Machine::set(callbackFunction f){
+void Machine::set(void (Machine::*f)(void)){
   _refreshFunction=f;
 };
 void Machine::update(){ // 1s
   if(_refreshFunction)_refreshFunction();
-  if(_state.fn) _state.fn();
+  // if(_state.fn) 
+  // must use '.*' or '->*' to call pointer-to-member function in '((Machine*)this)->Machine::_state.Machine::stateStruct::fn (...)', e.g. '(... ->* ((Machine*)this)->Machine::_state.Machine::stateStruct::fn) (...)'
+  _state.fn();
   _c++;
 if(_state.t==0){ // 0 = last state or shortest (1s) show
   if(_states.size()>0) nextState();

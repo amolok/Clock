@@ -9,36 +9,36 @@ extern "C" {
   typedef void (*callbackFunction)(void);
 }
 
-struct stateStruct
-{
-  callbackFunction fn;
-  callbackFunction fx;
-  word timer;
-};
 
 class Machine
 {
 private:
-  callbackFunction _refreshFunction;
+  struct stateStruct
+  {
+    void (Machine::*fn)(void);
+    void (Machine::*fx)(void);
+    word timer;
+  };
+  void (Machine::*_refreshFunction)(void);
   stateStruct _state;
   std::vector<stateStruct> _states;
   void (Machine::*_defaultState)(void);
   // std::function<void(void)> _defaultState;
-  callbackFunction _prevState;
-  callbackFunction _onClick;
-  callbackFunction _onDoubleClick;
-  callbackFunction _onPress;
+  void (Machine::*_prevState)(void);
+  void (Machine::*_onClick)(void);
+  void (Machine::*_onDoubleClick)(void);
+  void (Machine::*_onPress)(void);
   word _c; // counter [s] in current state = 45.51 h
   // bool _inHour(tHHMM begin, tHHMM end, tHHMM v);
   // bool _inTime(tHHMM begin, tHHMM end, tHHMM v);
   void _setDefaultState();
   void _fallBack();
 public:
-  void addState(void (Machine::*state)(void), word d, callbackFunction fx);
+  void addState(void (Machine::*state)(void), word d, void (Machine::*fx)(void));
   void nextState();
   void clearStates();
   void init();
-  void set(callbackFunction f);
+  void set(void (Machine::*f)(void));
   void update();
   void cycleOneClick();
   void cycleTwoClick();

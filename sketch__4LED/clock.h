@@ -25,20 +25,4 @@ public:
   void Sunset();
 };
 
-struct tHHMM
-{
-  uint8_t Hour;
-  uint8_t Minute;
-};
-
-struct settingsStruct
-{
-  tHHMM Day, Night; 
-  // tHHMM Sunrise, Sunset;
-  // tHHMM Wakeup;
-  // tHHMM Alarm;
-};
-
-// settingsStruct Settings;
-
 #endif

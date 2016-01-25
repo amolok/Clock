@@ -15,8 +15,7 @@ FNT F;
 #ifndef D
 Display4LED2 D;
 #endif
-// #include "clock.h" 
-#include "machine.h"
+#include "clock.h" 
 
 uint8_t Hour=      15;
 uint8_t Minute=    6;
@@ -26,10 +25,7 @@ uint8_t DayofWeek= 3;   // Sunday is day 0
 uint8_t Month=     1;   // Jan is month 0
 uint8_t Year=2016-1900; // the Year minus 1900
 
-Settings.Day.Hour=9;
-Settings.Day.Minute=0;
-Settings.Night.Hour=21;
-Settings.Night.Minute=0;
+// sSettings Settings;
 
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   100
@@ -37,6 +33,11 @@ Settings.Night.Minute=0;
 
 void setup()
 {
+  Settings.Day.Hour=9;
+  Settings.Day.Minute=0;
+  Settings.Night.Hour=21;
+  Settings.Night.Minute=0;
+
   Serial.begin(9600);
   Serial.println(F("Internal Temperature Sensor"));
   int k;
@@ -147,3 +148,220 @@ double GetTemp(void)
   return (t);
 }
 
+
+bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
+{
+// 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22
+// 23 24 0 1 2 3 4 5 6 7
+  bool f=false;
+// if(v.Hour>23) return false;
+  if((begin.Hour>23)|| (end.Hour>23)|| (v.Hour>23) ) return false;
+  for(uint8_t h=begin.Hour;h!=end.Hour;h++){
+    h=h%24; if(v.Hour==h){f=true; break;
+    }
+  }
+  return f;
+}
+bool _inTime(tHHMM begin, tHHMM end, tHHMM v)
+{
+//  ... > Sunrise > Day > Sunset > Night > ... [begin,end)
+  if(_inHour(begin, end, v)) {
+// 16:41 === 16:40
+    if(v.Hour==begin.Hour){
+      if(v.Minute>=begin.Minute) return true;
+      else return false;
+    }
+// 7:30 === 7:40
+    if(v.Hour==end.Hour){ 
+      if(v.Minute<end.Minute) return true;
+      else return false;
+    }
+  return true; // [16:40.. [17:--,0:--,6:--] ..7:40)
+  }else
+  return false;
+};
+
+/* MACHINE */
+
+struct stateStruct
+{
+  callbackFunction fn;
+  transition_fx f;
+  word timer;
+};
+stateStruct _state;
+std::vector<stateStruct> _states;
+callbackFunction _defaultState;
+// std::function<void(void)> _defaultState;
+callbackFunction _prevState;
+callbackFunction _onClick;
+callbackFunction _onDoubleClick;
+callbackFunction _onPress;
+// word _c; // counter [s] in current state = 45.51 h
+void _setDefaultState(){
+  tHHMM thm;
+  thm.Hour=Hour;
+  thm.Minute=Minute;
+  if(_inTime(Settings.Day,Settings.Night,thm))
+    _defaultState = &DaylightClock;
+  else
+    _defaultState = &NightClock;
+};
+void _fallBack(){
+  _setDefaultState();
+  clearStates();
+  // addState(_defaultState,0);
+};
+
+void addState(callbackFunction state , word d, transition_fx f){
+  stateStruct s;
+  s.fn=state;
+  s.timer=d;
+  s.f = f;
+  _states.insert(_states.begin(), s);
+};
+
+void nextState()
+{
+  if(_states.size()>0){
+    _prevState = _state.fn;
+    if(_states.size()>0){
+      _state = _states.back();
+      _states.pop_back();
+      _c = 0;
+// initializing 
+      D.drawToBuffer();
+      _state.fn();
+// can be NULL
+      D.transition(_state.f); 
+    }else{
+      _state.fn=_defaultState;
+      _state.f=fxCut;
+      _state.timer=0;
+    }
+  }
+};
+
+void clearStates(){
+  _states.clear();
+  _states.reserve(12);
+}
+void Machine(){
+// Sensor Sensors;
+  clearStates();
+  Clock.init();
+  M.init();
+  tHHMM thm;
+  thm.Hour = Hour; thm.Minute = Minute;
+  _setDefaultState();
+  addState(_defaultState, 0);
+  Clock.set(update);
+};
+void set(callbackFunction f){
+  _refreshFunction=f;
+};
+void update(){ // 1s
+  if(_refreshFunction)_refreshFunction();
+  // if(_state.fn) 
+  // must use '.*' or '->*' to call pointer-to-member function in '((Machine*)this)->_state.stateStruct::fn (...)', e.g. '(... ->* ((Machine*)this)->_state.stateStruct::fn) (...)'
+  _state.fn();
+  _c++;
+if(_state.t==0){ // 0 = last state or shortest (1s) show
+  if(_states.size()>0) nextState();
+}else{
+if(_state.t-- >0) // all that >0 is a countdown
+  if(_state.t==0) nextState();
+};
+};
+
+void cycleOneClick(){
+// clearStates();
+  Sensors.update();
+  addState(Sensors.showTemp, 1, fxDown);
+  addState(Sensors.showPressure, 1, fxDown);
+  addState(Sensors.showHumidity, 1, fxDown);
+  addState(Sensors.showCO2, 1, fxDown);
+  addState(_defaultState, 0, fxDown);
+  _onClick=nextState;
+  _onDoubleClick=NULL;
+  _onPress=_defaultState;
+// nextState();
+};
+void cycleTwoClick(){
+// clearStates();
+  addState(Clock.MMSS, 3, fxRight);
+  addState(Clock.Week, 3, fxRight);
+// addState(DDWDMM, 1, fxRight);
+  addState(Clock.DDWD, 1, fxRight);
+  addState(Clock.DDMM, 1, fxDown);
+  addState(Clock.YYYY, 1, fxLeft);
+  addState(_defaultState, 0, fxLeft);
+  _onClick=nextState;
+  _onDoubleClick=NULL;
+  _onPress=ClockMenu;
+// nextState();
+};
+// void Scroller(){
+//   if(_c==0){
+//   }
+// };
+void DaylightClock(){
+  if(_c==0) {
+    clearStates();
+    _defaultState = &DaylightClock;
+    _onClick = &cycleOneClick;
+    _onDoubleClick = &cycleTwoClick;
+    _onPress = function(){
+      clearStates();
+      addState(_defaultState, 0, NULL);
+    };
+  };
+  if(Second==58){
+    clearStates();
+    addState(Clock.MMSS, 2, fxRight);
+    addState(Clock.HHMM, 2, fxLeft);
+// Sensors.update();
+    addState(Sensors.showTemp, 1, fxUp);
+    addState(Sensors.showPressure, 1, fxUp);
+    addState(Sensors.showHumidity, 1, fxUp);
+    addState(Sensors.showCO2, 1, fxUp);
+    addState(_defaultState, 0, fxUp);      
+  }
+  if((Minute%15==14)&&(Second==0))
+    Sensors.update();
+  if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
+    clearStates();
+    addState(Clock.Sunset,1,fxDown);
+    addState(NightClock,0,fxDown);
+  }
+};
+void NightClock(){
+  if(_c==0){
+    clearStates();
+    _defaultState = &NightClock;
+    addState(Clock.HHMM, 5, fxLeft);
+    addState(Sensors.showTemp, 5, fxDown);
+    addState(_defaultState, 0, fxUp);      
+  }
+  if(((Hour==Settings.Day.Hour)&&(Minute==Settings.Day.Minute))&&(Second==30)){
+    clearStates();
+    addState(Clock.Sunrise,1,fxUp);
+    addState(DaylightClock,0,fxUp);
+  }    
+};
+/*
+void ClockMenu(){
+if(_c==0){
+clearStates();
+Menu.init();
+addState(Menu.show, 0, fxLeft);
+_onClick=Menu.nextMenu;
+_onDoubleClick=Menu.set;
+_onPress=Menu.back;
+}
+if(Menu.update)Menu.update();
+if(Menu.exitMenu){
+addState(_defaultState, 0, fxLeft); // go back to [HH:MM]
+}
+}
+*/

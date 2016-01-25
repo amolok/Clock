@@ -3,9 +3,11 @@
 #include "display.h"
 // #include "sensors.h"
 // #include "OneButton.h"
+#include "settings.h"
 
 extern FNT F;
 extern Display4LED2 D;
+// extern sSettings Settings;
 extern uint8_t Year, Month, Day, DayofWeek, Hour, Minute, Second;
 
 class Clockwork
@@ -147,18 +149,3 @@ public:
     D._hold(3, F.blank);
   };
 };
-
-struct tHHMM
-{
-  uint8_t Hour;
-  uint8_t Minute;
-};
-
-struct settingsStruct
-{
-  tHHMM Day, Night; 
-  // tHHMM Sunrise, Sunset;
-  // tHHMM Wakeup;
-  // tHHMM Alarm;
-};
-settingsStruct Settings;

@@ -10,7 +10,10 @@
 extern "C" {
   typedef void (*callbackFunction)(void);
 }
-
+enum transition_fx
+{
+  fxCut, fxUp, fxDown, fxLeft, fxRight
+};
 class Display4LED2
 {
 private:
@@ -46,8 +49,9 @@ void setRefresh(callbackFunction newFunction);
   Transition: PV: PROG VIEW 
 
 */
-//void transition(callbackFunction fxFunction);
-//void cut(); // copy V to P
+
+void transition(transition_fx x);
+void _cut(); // copy V to P
 // [!   ] one position animation
 void _p(uint8_t f, uint8_t D[4]); // put display to frame
 void _ab(uint8_t p, const uint8_t AB[4]); // put animation to frames
@@ -100,7 +104,7 @@ void update();
 void display(uint8_t f);
 // direct display writing D
 void print(uint8_t D[4]);
-
+void drawToBuffer();
 // String Scrolling
 #define fx_loop     2 // [   a]→[abcd]→[fghi]→[i   ] [    ]→[   a]
 #define fx_short    1 // [abcd]efghi [fghi] [abcd]
