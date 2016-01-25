@@ -6,7 +6,6 @@
 #include <Arduino.h>
 // #include <vector>
 //#include <TM1637Display.h>
-#include "settings.h"
 #include "font.h"
 #ifndef FNT
 FNT F;
@@ -16,6 +15,8 @@ FNT F;
 Display4LED2 D;
 #endif
 #include "clock.h" 
+#include "settings.h"
+Clockwork Clock;
 
 uint8_t Hour=      15;
 uint8_t Minute=    6;
@@ -25,7 +26,7 @@ uint8_t DayofWeek= 3;   // Sunday is day 0
 uint8_t Month=     1;   // Jan is month 0
 uint8_t Year=2016-1900; // the Year minus 1900
 
-// sSettings Settings;
+sSettings Settings;
 
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   100
@@ -191,6 +192,7 @@ struct stateStruct
 };
 stateStruct _state;
 std::vector<stateStruct> _states;
+callbackFunction _refreshFunction;
 callbackFunction _defaultState;
 // std::function<void(void)> _defaultState;
 callbackFunction _prevState;
@@ -250,11 +252,10 @@ void Machine(){
 // Sensor Sensors;
   clearStates();
   Clock.init();
-  M.init();
   tHHMM thm;
   thm.Hour = Hour; thm.Minute = Minute;
   _setDefaultState();
-  addState(_defaultState, 0);
+  addState(_defaultState, 0, fxCut);
   Clock.set(update);
 };
 void set(callbackFunction f){
@@ -266,14 +267,15 @@ void update(){ // 1s
   // must use '.*' or '->*' to call pointer-to-member function in '((Machine*)this)->_state.stateStruct::fn (...)', e.g. '(... ->* ((Machine*)this)->_state.stateStruct::fn) (...)'
   _state.fn();
   _c++;
-if(_state.t==0){ // 0 = last state or shortest (1s) show
+if(_state.timer==0){ // 0 = last state or shortest (1s) show
   if(_states.size()>0) nextState();
 }else{
-if(_state.t-- >0) // all that >0 is a countdown
-  if(_state.t==0) nextState();
+if(_state.timer-- >0) // all that >0 is a countdown
+  if(_state.timer==0) nextState();
 };
 };
 
+/*
 void cycleOneClick(){
 // clearStates();
   Sensors.update();
@@ -305,33 +307,35 @@ void cycleTwoClick(){
 //   if(_c==0){
 //   }
 // };
+*/
+void ClockHHMM(){Clock.HHMM();}
+void ClockMMSS(){Clock.MMSS();}
+void ClockSunset(){Clock.Sunset();}
+void ClockSunrise(){Clock.Sunrise();}
 void DaylightClock(){
   if(_c==0) {
     clearStates();
     _defaultState = &DaylightClock;
-    _onClick = &cycleOneClick;
-    _onDoubleClick = &cycleTwoClick;
-    _onPress = function(){
-      clearStates();
-      addState(_defaultState, 0, NULL);
-    };
+    // _onClick = &cycleOneClick;
+    // _onDoubleClick = &cycleTwoClick;
+    _onPress = clearStates;
   };
   if(Second==58){
     clearStates();
-    addState(Clock.MMSS, 2, fxRight);
-    addState(Clock.HHMM, 2, fxLeft);
+    addState(ClockMMSS, 2, fxRight);
+    addState(ClockHHMM, 2, fxLeft);
 // Sensors.update();
-    addState(Sensors.showTemp, 1, fxUp);
-    addState(Sensors.showPressure, 1, fxUp);
-    addState(Sensors.showHumidity, 1, fxUp);
-    addState(Sensors.showCO2, 1, fxUp);
+// addState(Sensors.showTemp, 1, fxUp);
+// addState(Sensors.showPressure, 1, fxUp);
+// addState(Sensors.showHumidity, 1, fxUp);
+// addState(Sensors.showCO2, 1, fxUp);
     addState(_defaultState, 0, fxUp);      
   }
   if((Minute%15==14)&&(Second==0))
-    Sensors.update();
+    // Sensors.update();
   if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
     clearStates();
-    addState(Clock.Sunset,1,fxDown);
+    addState(ClockSunset,1,fxDown);
     addState(NightClock,0,fxDown);
   }
 };
@@ -339,13 +343,13 @@ void NightClock(){
   if(_c==0){
     clearStates();
     _defaultState = &NightClock;
-    addState(Clock.HHMM, 5, fxLeft);
-    addState(Sensors.showTemp, 5, fxDown);
+    addState(ClockHHMM, 5, fxLeft);
+    // addState(Sensors.showTemp, 5, fxDown);
     addState(_defaultState, 0, fxUp);      
   }
   if(((Hour==Settings.Day.Hour)&&(Minute==Settings.Day.Minute))&&(Second==30)){
     clearStates();
-    addState(Clock.Sunrise,1,fxUp);
+    addState(ClockSunrise,1,fxUp);
     addState(DaylightClock,0,fxUp);
   }    
 };

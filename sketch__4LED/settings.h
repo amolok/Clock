@@ -17,6 +17,6 @@ struct sSettings
   // tHHMM Alarm;
 };
 
-sSettings Settings;
+// sSettings Settings;
 
 #endif
