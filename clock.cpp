@@ -1,27 +1,30 @@
 #include <vector>
-#include font.h
-#include display.h
-#include sensors.h
-#include OneButton.h
+#include "font.h"
+#include "display.h"
+// #include "sensors.h"
+// #include "OneButton.h"
 
+#ifndef FNT
 FNT F;
+#endif
+#ifndef D
 Display D;
+#endif
 
 class Clockwork
 {
 private:
-  byte _D[4];
-  display = NULL;
+  uint8_t _D[4];
 
-  void _incSM(byte p, byte x){
-    D._up(p+1,F.d[x%10],F.d[(x+1)%10]);
+  void _incSM(uint8_t p, uint8_t x){
+    D._down(p+1,F.d[x%10],F.d[(x+1)%10]);
     if(x%10==9){
       D._up(p,F.d[x/10],F.d[((x+1)/10)%6]);
     }else{
       D._hold(p,F.d[x/10]);
     }
   }
-  void _incHH(byte b, byte x){
+  void _incHH(uint8_t b, uint8_t x){
     // if(__AMPM); 12 am/pm
     switch(x){
       case 23:
@@ -46,7 +49,7 @@ private:
     }
     D._up(p+1,F.d[x%10],F.d[(x+1)%10]);
   }
-  void _SM(byte p, byte x){
+  void _SM(uint8_t p, uint8_t x){
     D._hold(p,   F.d[x/10]);
     D._hold(p+1, F.d[x%10]);
   }
@@ -77,7 +80,7 @@ public:
     }else{
       _SM(0, Minute);
     }
-    D.blink(2, F.dot);
+    D.blink(1,F.dot);
   };
   void HHMM(){
     if(Minute<59){
@@ -93,9 +96,10 @@ public:
         _incHH(0,Hour);
       }
     }
+    D.blink(1,F.dot);
   };
-  void _WD(byte p, byte wd){
-    const byte rus[7][2]={{1,5}, {3,2}, {1,6}, {5,4}, {7,6}, {3,6}, {5,0}, };
+  void _WD(uint8_t p, uint8_t wd){
+    const uint8_t rus[7][2]={{1,5}, {3,2}, {1,6}, {5,4}, {7,6}, {3,6}, {5,0}, };
     D._hold(p,   F.rusWeekDays[rus[wd][0]]);
     D._hold(p+1, F.rusWeekDays[rus[wd][1]]);
   };
@@ -112,7 +116,7 @@ public:
     D.on(1, F.dot);
   };
   void Week(){
-    byte d[4];
+    uint8_t d[4];
     d[0]= (__A|__G|__D);
     d[1]= (__A|__G);
     d[2]= (__G|__D);
@@ -150,8 +154,8 @@ public:
 
 struct tHHMM
 {
-  byte Hour;
-  byte Minute;
+  uint8_t Hour;
+  uint8_t Minute;
 };
 
 struct settingsStruct
@@ -189,13 +193,13 @@ private:
   // word _d; // delay [s], if 0 -- nonstop
   // callbackFunction _states[6];
   // word _delaysStack[6]; // [s] 45.51 = h
-  bool _inHour(byte begin, end, v){
+  bool _inHour(uint8_t begin, end, v){
     // 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22
     // 23 24 0 1 2 3 4 5 6 7
     bool f=false;
     // if(v.Hour>23) return false;
     if((begin.Hour>23)|| (end.Hour>23)|| (v.Hour>23) ) return false;
-    for(byte h=begin.Hour;h!=end.Hour;h++){
+    for(uint8_t h=begin.Hour;h!=end.Hour;h++){
         h=h%24; if(v.Hour==h){f=true; break; } }
     return f;
   }
@@ -223,6 +227,7 @@ private:
   }
 public:
   void addState(callbackFunction state, word d, callbackFunction fx){
+    Serial.println(F("addState"));
     stateStruct s;
     s.fn=state;
     s.timer=d;
@@ -230,13 +235,15 @@ public:
     _states.push_front(s);
   };
   void nextState(){
+    if(_DEBUG_)Serial.println(F("nextState>>>"));
     if(_states.size()>0){
       _prevState = _state.fn;
       if(_states.size()>0){
         _state = _states.back();
         _states.pop_back();
         _c = 0;
-        D.drawToBuffer(_state.fn); // initializing 
+        D.drawToBuffer();
+        _state.fn()); // initializing 
         D.transition(_state.fx); // can be NULL
       }else{
         _state.fn=_defaultState;
@@ -246,6 +253,7 @@ public:
     }
   };
   void clearStates(){
+    if(_DEBUG_)Serial.println(F("clearStates"));
     _states.clear();
     _states.reserve(12);
   }
@@ -396,29 +404,29 @@ edit Digit
 
 struct EditableDigit
 {
-  byte min, max, val;
+  uint8_t min, max, val;
 };
 
 struct menuStruct
 {
   string title[12]; // menu label
   callbackFunction fn; // if select call this function
-  byte style; // MENU_EDIT || scroller fx
+  uint8_t style; // MENU_EDIT || scroller fx
 };
 
 
 class Menu
 {
 private:
-  // byte _d[4];
-  byte _m; // current submenu
+  // uint8_t _d[4];
+  uint8_t _m; // current submenu
   EditableDigit _E[4]; // edit digit
-  byte _p; // edit pointer
+  uint8_t _p; // edit pointer
   std::vector<menuStruct> _menuStack;
   menuStruct _menu;
   callbackFunction _back, _next, _set; // longPress, doubleClick, Click
   int _c; // counter [s]
-  const byte _timeout = 12; // [s]
+  const uint8_t _timeout = 12; // [s]
 public:
   bool exitMenu;
   callbackFunction _refresh;
@@ -499,7 +507,7 @@ public:
     addMenu(editDDMM, NULL, NULL);
     addMenu(editYYYY, NULL, NULL);
   };
-  // void editD(byte p, byte* d, byte min, byte max){};
+  // void editD(uint8_t p, uint8_t* d, uint8_t min, uint8_t max){};
   /* Time */
   void editHHMM(){
     if(_m++==0){
