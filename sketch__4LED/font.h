@@ -1,5 +1,5 @@
 #ifndef __font__
-#define __font__
+#define __font__ 
 #include <Arduino.h>
 
 // Fonts
@@ -24,7 +24,7 @@ struct FNT
   const uint8_t minus = B01000000; // -
   const uint8_t week  = B00110000; //
   const uint8_t grad  = B01100011; // °
-  const uint8_t celsius=B01000110; // C
+  const uint8_t celsius=B00111001; // C
   const uint8_t dot   = __p; // .
   const uint8_t trpile= __A|__D|__G;
 
@@ -100,12 +100,15 @@ struct FNT
     };
   };
   sSun Sun;
+
   struct sSensor
   {
     struct sTemp
     {
-      const uint8_t ico = B11111000; // t.
-      const uint8_t sign= B01100011; // °
+      // t.
+      const uint8_t ico = B11111000;
+      // °
+      const uint8_t sign= B01100011;
       const uint8_t rise[4]={
         B00000000,
         B00001000,
@@ -120,13 +123,13 @@ struct FNT
       };
     };
     sTemp Temp;
-  };
-  sSensor Sensor;
-    /*
-    struct Humidity
+
+    struct sHumidity
     {
-      const uint8_t ico = B11110110; // H.
-      const uint8_t sign[2] = { B01100011, B01011100 }; // %
+    // H.
+      const uint8_t ico = B11110110;
+    // %
+      const uint8_t sign[2] = { B01100011, B01011100 };
       const uint8_t rise[2][4]={
         {
           B00000000,
@@ -153,10 +156,15 @@ struct FNT
           B01011100,
         }
       };
-      struct Pressure
-      {
-      const uint8_t ico = B11110011; // P.
-      const uint8_t sign= B01001000; // m
+    };
+    sHumidity Humidity;
+
+    struct sPressure
+    {
+    // P.
+      const uint8_t ico = B11110011;
+    // m
+      const uint8_t sign= B01001000;
       const uint8_t rise[4] = {
         B00001000,
         B01001000,
@@ -164,43 +172,56 @@ struct FNT
         B01001000,
       };
       const uint8_t fall[4] = {
-        B00000001,
-        B01000000,
+        B00001001,
+        B01001000,
         B00001000,
         B01001000,
       };
-      struct CO2
-      {
-        const uint8_t ico[3]={celsius,d[0],d[2]}; // CO2
-        const uint8_t sign[3]={AbC['p'-'a'],AbC['p'-'a'],AbC['m'-'a']}; // ppm
+    };
+    sPressure Pressure;
+
+/*
+    struct sCO2
+    {
+    // CO2
+      const uint8_t ico[3]={celsius,d[0],d[2]};
+    // ppm
+      const uint8_t sign[3]={AbC['p'-'a'],AbC['p'-'a'],AbC['m'-'a']};
+    };
+    sCO2 CO2;
+
+    struct sLight
+    {
+    // L.
+      const uint8_t ico = B10111000;
+    // const uint8_t sign= B10111000; // 
+    };
+    sLight Light;
+
+    struct sLevel
+    {
+      const uint8_t v3[3]={
+        B00001000,
+        B01001000,
+        B01001001,
+      };
+      const uint8_t l3[3]={
+        B00001000,
+        B01000000,
+        B00000010,
+      };
+      const uint8_t sound[4]={
+        B01000000,
+        B01000001,
+        B01001000,
+        B01001001,
       };
     };
-    struct Light
-    {
-      const uint8_t ico = B10111000; // L.
-      // const uint8_t sign= B10111000; // 
-    };
-  };
-  struct level
-  {
-    const uint8_t v3[3]={
-      B00001000,
-      B01001000,
-      B01001001,
-    };
-    const uint8_t l3[3]={
-      B00001000,
-      B01000000,
-      B00000010,
-    };
-    const uint8_t sound[4]={
-      B01000000,
-      B01000001,
-      B01001000,
-      B01001001,
-    };
-  };
+    sLevel Level;
 */
+  };
+  sSensor Sensor;
+
 };
 
 extern FNT F;

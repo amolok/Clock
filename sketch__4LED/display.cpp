@@ -51,28 +51,33 @@ void Display4LED2::drawToBuffer(){
   Transition: PV: PROG VIEW 
 */
 void Display4LED2::transition(transition_fx x){
-  if(_DEBUG_)Serial.print(F("transition: "));
+  if(_DEBUG_)Serial.print("transition: ");
   switch(x){
     case fxUp:
-    up(_AB[0][3],_AB[1][3]);
+    up(         _AB[0][3],_AB[1][3]);
     break;
     case fxDown:
-    down(_AB[0][3],_AB[1][3]);
+    down(       _AB[0][3],_AB[1][3]);
     break;
     case fxLeft:
-    left(_AB[0][3],_AB[1][3]);
+    scrollLeft( _AB[0][3],_AB[1][3]);
     break;
     case fxRight:
-    right(_AB[0][3],_AB[1][3]);
+    scrollRight(_AB[0][3],_AB[1][3]);
     break;
+    case fxCut:
+    _p(0, _AB[1][0]);
+    _p(0, _AB[1][1]);
+    _p(0, _AB[1][2]);
+    _p(0, _AB[1][3]);
     default:
-    _cut();
+    return;
   };
   _cut();
 };
 // copy V to P
 void Display4LED2::_cut(){
-  if(_DEBUG_)Serial.println(F("cut"));
+  if(_DEBUG_)Serial.println("cut");
   for(uint8_t i=0;i<4;i++){
     _AB[0][i][0]=_AB[1][i][0];
     _AB[0][i][1]=_AB[1][i][1];
@@ -131,13 +136,15 @@ void Display4LED2::_DD(uint8_t p, uint8_t x){ // [ 12 ] [02  ] 2 digits at posit
   _hold(p,   F.d[(x/10)%10]);
   _hold(p+1, F.d[x%10]);
 };
-void Display4LED2::_DDD(uint8_t p, uint8_t x){ // [123 ] [001 ] 3 digits at position
+void Display4LED2::_DDD(uint8_t p, uint16_t x){ // [123 ] [001 ] 3 digits at position
     // if(p>1){ blink2(p, __A|__G|__D); return; };
+  Serial.print("_DDD=");
+  Serial.println(x);
   _hold(p,   F.d[(x/100)%10]);
   _hold(p+1, F.d[(x/10)%10]);
   _hold(p+2, F.d[x%10]);
 };
-void Display4LED2::_DDDD(uint8_t x){ // [1234] [0001] 4 digits
+void Display4LED2::_DDDD(uint16_t x){ // [1234] [0001] 4 digits
   _hold(0, F.d[(x/1000)%10]);
   _hold(1, F.d[(x/100)%10]);
   _hold(2, F.d[(x/10)%10]);
@@ -188,19 +195,22 @@ void Display4LED2::down(uint8_t A[4], uint8_t B[4]){
 };
 void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
 // ABCD→EFGH BCDE CDEF DEFG EFGH
-  // A[4]B[4]
+  if(_DEBUG_)Serial.println("scrollRight");
   _AB[_b][0][0]=A[1];
   _AB[_b][0][1]=A[2];
   _AB[_b][0][2]=A[3];
   _AB[_b][0][3]=B[0];
+
   _AB[_b][1][0]=A[2];
   _AB[_b][1][1]=A[3];
   _AB[_b][1][2]=B[0];
   _AB[_b][1][3]=B[1];
+
   _AB[_b][2][0]=A[3];
   _AB[_b][2][1]=B[0];
   _AB[_b][2][2]=B[1];
   _AB[_b][2][3]=B[2];
+
   _AB[_b][3][0]=B[0];
   _AB[_b][3][1]=B[1];
   _AB[_b][3][2]=B[2];
@@ -208,7 +218,7 @@ void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
 };
 void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
 // ABCD→EFGH ABCD CD__ __EF EFGH
-  if(_DEBUG_)Serial.println(F("right"));
+  if(_DEBUG_)Serial.println("right");
   A(_A);
   _AB[_b][1][0]=_A[2];
   _AB[_b][1][1]=_A[3];
@@ -222,10 +232,54 @@ void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][2][3]=_B[1];
   B(_B);
 };
-void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
+
+void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
+// ABCD←EFGH HABC GHAB FGHA EFGH
+  if(_DEBUG_)Serial.println(F("left"));
+  _AB[_b][0][0]=_B[3];
+  _AB[_b][0][1]=_A[0];
+  _AB[_b][0][2]=_A[1];
+  _AB[_b][0][3]=_A[2];
+
+  _AB[_b][1][0]=_B[2];
+  _AB[_b][1][1]=_B[3];
+  _AB[_b][1][2]=_A[0];
+  _AB[_b][1][3]=_A[1];
+
+  _AB[_b][2][0]=_B[1];
+  _AB[_b][2][1]=_B[2];
+  _AB[_b][2][2]=_B[3];
+  _AB[_b][2][3]=_A[0];
+
+  _AB[_b][3][0]=_B[0];
+  _AB[_b][3][1]=_B[1];
+  _AB[_b][3][2]=_B[2];
+  _AB[_b][3][3]=_B[3];
+};
+/*void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
+// ABCD←EFGH _ABC H_ABC GH_A FGH_
+  if(_DEBUG_)Serial.println(F("left"));
+  _AB[_b][0][0]=F.blank;
+  _AB[_b][0][1]=_A[0];
+  _AB[_b][0][2]=_A[1];
+  _AB[_b][0][3]=_A[2];
+  _AB[_b][1][0]=_B[3];
+  _AB[_b][1][1]=F.blank;
+  _AB[_b][1][2]=_A[0];
+  _AB[_b][1][3]=_A[1];
+  _AB[_b][2][0]=_B[2];
+  _AB[_b][2][1]=_B[3];
+  _AB[_b][2][2]=F.blank;
+  _AB[_b][2][3]=_A[0];
+  _AB[_b][3][0]=_B[1];
+  _AB[_b][3][1]=_B[2];
+  _AB[_b][3][2]=_B[3];
+  _AB[_b][3][3]=F.blank;
+};
+*/void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
 // ABCD←EFGH ABCD __AB GH__ EFGH
   if(_DEBUG_)Serial.println(F("left"));
-  A(_A);
+  // A(_A);
   _AB[_b][1][0]=_A[0];
   _AB[_b][1][1]=_A[1];
   _AB[_b][1][2]=F.blank;

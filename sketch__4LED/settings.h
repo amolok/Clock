@@ -4,7 +4,7 @@
 /* PIN */
 #define CLK 2
 #define DIO 3
-
+#define BTN 8
 
 /* Settings */
 

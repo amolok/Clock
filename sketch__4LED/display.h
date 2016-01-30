@@ -10,7 +10,7 @@ extern "C" {
 }
 enum transition_fx
 {
-  fxCut, fxUp, fxDown, fxLeft, fxRight
+  fxNone, fxCut, fxUp, fxDown, fxLeft, fxRight
 };
 class Display4LED2
 {
@@ -63,8 +63,8 @@ void B(uint8_t B[4]); // put B (frame 3)
 // [0123] show some digits
 void _D(uint8_t p, uint8_t x); // [  1 ] digit at position
 void _DD(uint8_t p, uint8_t x); // [ 12 ] [02  ] 2 digits at position
-void _DDD(uint8_t p, uint8_t x); // [123 ] [001 ] 3 digits at position
-void _DDDD(uint8_t x); // [1234] [0001] 4 digits
+void _DDD(uint8_t p, uint16_t x); // [123 ] [001 ] 3 digits at position
+void _DDDD(uint16_t x); // [1234] [0001] 4 digits
 
 // Animation
 
@@ -74,18 +74,20 @@ void blink2(uint8_t p, uint8_t C);
 void on(uint8_t p, uint8_t C);
 
 // FullScreen Animation:
+// A[4]B[4]
 // ABCD
 // EFGH↑
 void up(uint8_t A[4], uint8_t B[4]);
 void down(uint8_t A[4], uint8_t B[4]);
+// ABCD←EFGH _ABC H_ABC GH_A FGH_
+void scrollLeft(uint8_t A[4], uint8_t B[4]);
 // ABCD→EFGH BCDE CDEF DEFG EFGH
-// A[4]B[4]
 void scrollRight(uint8_t A[4], uint8_t B[4]);
 // ABCD→EFGH ABCD CD__ __EF EFGH
 void right(uint8_t A[4], uint8_t B[4]);
 // ABCD←EFGH ABCD __AB GH__ EFGH
 void left(uint8_t A[4], uint8_t B[4]);
-  // [ABCD]
+// [ABCD]
 void hold(uint8_t D[4]);
 
 // Text writing
