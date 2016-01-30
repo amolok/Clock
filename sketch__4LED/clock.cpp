@@ -11,9 +11,9 @@ private:
 uint8_t _D[4];
 */
 void _incSM(uint8_t p, uint8_t x){
-  D._up(p+1,F.d[x%10],F.d[(x+1)%10]);
+  D._down(p+1,F.d[x%10],F.d[(x+1)%10]);
   if(x%10==9){
-    D._up(p,F.d[x/10],F.d[((x+1)/10)%6]);
+    D._down(p,F.d[x/10],F.d[((x+1)/10)%6]);
   }else{
     D._hold(p,F.d[x/10]);
   }
@@ -22,26 +22,26 @@ void _incHH(uint8_t p, uint8_t x){
 // if(__AMPM); 12 am/pm
   switch(x){
     case 23:
-// D._up(p,F.d[2],(__0H ? '0':F.blank));
-    D._up(p  ,F.d[2],F.blank);
-    D._up(p+1,F.d[3],F.d[0]);
+// D._down(p,F.d[2],(__0H ? '0':F.blank));
+    D._down(p  ,F.d[2],F.blank);
+    D._down(p+1,F.d[3],F.d[0]);
     return;
     case 19:
-    D._up(p,F.d[1],F.d[2]);
+    D._down(p,F.d[1],F.d[2]);
     case 9:
-// D._up(p,(__0H ? '0':F.blank,F.d[1]));
-    D._up(p,F.blank,F.d[1]);
+// D._down(p,(__0H ? '0':F.blank,F.d[1]));
+    D._down(p,F.blank,F.d[1]);
     break;
     default:
     if(x<10)
-// D._up(p,(__0H ? '0':F.blank,F.d[1]));
+// D._down(p,(__0H ? '0':F.blank,F.d[1]));
       D._hold(p,F.blank);
 // D._hold(p,F.d[x/10]);
     else
       D._hold(p,F.d[x/10]);
     break;
   }
-  D._up(p+1,F.d[x%10],F.d[(x+1)%10]);
+  D._down(p+1,F.d[x%10],F.d[(x+1)%10]);
 }
 void _SM(uint8_t p, uint8_t x){
   D._hold(p,   F.d[x/10]);
@@ -75,7 +75,7 @@ void Clockwork::MMSS(){
   }else{
     _SM(0, Minute);
   }
-  D.blink(2, F.dot);
+  D.blink(1,F.dot);
 };
 void Clockwork::HHMM(){
   if(Minute<59){
@@ -91,6 +91,7 @@ void Clockwork::HHMM(){
       _incHH(0,Hour);
     }
   }
+  D.blink(1,F.dot);
 };
 void Clockwork::_WD(uint8_t p, uint8_t wd){
   const uint8_t rus[7][2]={{1,5}, {3,2}, {1,6}, {5,4}, {7,6}, {3,6}, {5,0}, };

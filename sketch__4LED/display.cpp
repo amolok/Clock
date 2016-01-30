@@ -1,5 +1,7 @@
 #include "display.h"
 #include "font.h"
+
+#define _DEBUG_ true
 /*
     A A'
     B B'
@@ -37,7 +39,10 @@ void Display4LED2::setRefresh(callbackFunction newFunction){
   _refreshFunc = newFunction;
 };
 void Display4LED2::drawToBuffer(){
+  // uint8_t tb=_b;
   _b=1;
+  // f();
+  // _b=tb;
 };
 /* 
   Transition effects 
@@ -45,8 +50,8 @@ void Display4LED2::drawToBuffer(){
   Animation: AB: f=[0-4]
   Transition: PV: PROG VIEW 
 */
-
 void Display4LED2::transition(transition_fx x){
+  if(_DEBUG_)Serial.print(F("transition: "));
   switch(x){
     case fxUp:
     up(_AB[0][3],_AB[1][3]);
@@ -62,10 +67,12 @@ void Display4LED2::transition(transition_fx x){
     break;
     default:
     _cut();
-  }
+  };
+  _cut();
 };
 // copy V to P
 void Display4LED2::_cut(){
+  if(_DEBUG_)Serial.println(F("cut"));
   for(uint8_t i=0;i<4;i++){
     _AB[0][i][0]=_AB[1][i][0];
     _AB[0][i][1]=_AB[1][i][1];
@@ -96,6 +103,7 @@ void Display4LED2::_up(uint8_t p, uint8_t A, uint8_t B){
   _AB[_b][3][p]= B;
 };
 void Display4LED2::_down(uint8_t p, uint8_t A, uint8_t B){
+  // if(_DEBUG_)Serial.println(F("_down"));
   _AB[_b][0][p]=A;
   _AB[_b][1][p] = _shift_D(A) | (B & __D)>>3 ;
   // + BC->B, BE->F, BG->A
@@ -141,6 +149,10 @@ void Display4LED2::_DDDD(uint8_t x){ // [1234] [0001] 4 digits
 /* fx: blink, flash, on */
 
 void Display4LED2::blink(uint8_t p, uint8_t C){
+  // _AB[1][0][p]=_AB[1][0][p] | C;
+  // _AB[1][1][p]=_AB[1][1][p] | C;
+  // _AB[1][2][p]=_AB[1][2][p] & ~C;
+  // _AB[1][3][p]=_AB[1][3][p] & ~C;
   _AB[_b][0][p]=_AB[_b][0][p] | C;
   _AB[_b][1][p]=_AB[_b][1][p] | C;
   _AB[_b][2][p]=_AB[_b][2][p] & ~C;
@@ -165,10 +177,12 @@ void Display4LED2::on(uint8_t p, uint8_t C){
 void Display4LED2::up(uint8_t A[4], uint8_t B[4]){
     // ABCD
     // EFGH↑
+  if(_DEBUG_)Serial.println(F("up"));
   for(uint8_t i=0;i<4;i++)
     _up(i, A[i], B[i]);
 };
 void Display4LED2::down(uint8_t A[4], uint8_t B[4]){
+  if(_DEBUG_)Serial.println(F("down"));
   for(uint8_t i=0;i<4;i++)
     _down(i, A[i], B[i]);
 };
@@ -194,6 +208,7 @@ void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
 };
 void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
 // ABCD→EFGH ABCD CD__ __EF EFGH
+  if(_DEBUG_)Serial.println(F("right"));
   A(_A);
   _AB[_b][1][0]=_A[2];
   _AB[_b][1][1]=_A[3];
@@ -209,15 +224,16 @@ void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
 };
 void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
 // ABCD←EFGH ABCD __AB GH__ EFGH
+  if(_DEBUG_)Serial.println(F("left"));
   A(_A);
-  _AB[_b][1][0]=F.blank;
-  _AB[_b][1][1]=F.blank;
-  _AB[_b][1][2]=_A[0];
-  _AB[_b][1][3]=_A[1];
-  _AB[_b][2][0]=_B[2];
-  _AB[_b][2][1]=_B[3];
-  _AB[_b][2][2]=F.blank;
-  _AB[_b][2][3]=F.blank;
+  _AB[_b][1][0]=_A[0];
+  _AB[_b][1][1]=_A[1];
+  _AB[_b][1][2]=F.blank;
+  _AB[_b][1][3]=F.blank;
+  _AB[_b][2][0]=F.blank;
+  _AB[_b][2][1]=F.blank;
+  _AB[_b][2][2]=_B[2];
+  _AB[_b][2][3]=_B[3];
   B(_B);
 };
 void Display4LED2::hold(uint8_t D[4]){
@@ -255,17 +271,19 @@ void Display4LED2::text(char D[4]){ // hold [text] for four frames
 //
 // 1/4 s update functions:
 //
-void Display4LED2::update(){// 1/4 s
+void Display4LED2::update(){
 //  if(_updateFunc)_updateFunc();
   Display4LED2::animator();
 };
 
 // display animation
-void Display4LED2::animator(){// 1/4 s
+void Display4LED2::animator(){
   display(_f++);
-  if(_f>3){// 1s
+  // 1s
+  if(_f>3){
     if(_refreshFunc){
       uint8_t tb=_b; _b=0; // all Refresh Function will write to VIEW
+      // Serial.println(F("animator:refresh"));
       _refreshFunc();
       _b=tb;
     }
@@ -274,8 +292,8 @@ void Display4LED2::animator(){// 1/4 s
 };
 // display one frame -- update function -- PROG
 void Display4LED2::display(uint8_t f){
-//  _D(3,f);
-//  setBrightness((uint8_t)(f<<1)+8);
+ // _D(3,f);
+ // setBrightness((uint8_t)(f==0)+8);
   print((_AB[0][f]));
 };
 void Display4LED2::setSegments(const uint8_t segments[4]){
@@ -378,3 +396,17 @@ void scroll(string s, callbackFunction next, char fx){
 };
 */
 
+void Display4LED2::debug_print(){
+  Serial.println("======== _AB");
+  // Serial.print(_AB[b][f][p], BIN);
+  for (uint8_t j=0; j<4; j++) {
+    for(uint8_t i=0;i<2;i++){
+      for(uint8_t k=0; k<4; k++){
+        Serial.print(_AB[i][j][k],HEX);
+        Serial.print(" ");
+      }
+      Serial.print("\t = \t");
+    }
+    Serial.print("\n");
+  }
+}

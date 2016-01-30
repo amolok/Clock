@@ -115,6 +115,7 @@ void drawToBuffer();
 // void scroller();
 // scroll string with fx, then call next, flag "ready" when have whole string displayed
 // void scroll(string s, callbackFunction next, char fx);
+void debug_print();
 protected:
 void animator();
 };

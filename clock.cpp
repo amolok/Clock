@@ -17,7 +17,7 @@ private:
   uint8_t _D[4];
 
   void _incSM(uint8_t p, uint8_t x){
-    D._up(p+1,F.d[x%10],F.d[(x+1)%10]);
+    D._down(p+1,F.d[x%10],F.d[(x+1)%10]);
     if(x%10==9){
       D._up(p,F.d[x/10],F.d[((x+1)/10)%6]);
     }else{
@@ -80,7 +80,7 @@ public:
     }else{
       _SM(0, Minute);
     }
-    D.blink(2, F.dot);
+    D.blink(1,F.dot);
   };
   void HHMM(){
     if(Minute<59){
@@ -96,6 +96,7 @@ public:
         _incHH(0,Hour);
       }
     }
+    D.blink(1,F.dot);
   };
   void _WD(uint8_t p, uint8_t wd){
     const uint8_t rus[7][2]={{1,5}, {3,2}, {1,6}, {5,4}, {7,6}, {3,6}, {5,0}, };
@@ -226,6 +227,7 @@ private:
   }
 public:
   void addState(callbackFunction state, word d, callbackFunction fx){
+    Serial.println(F("addState"));
     stateStruct s;
     s.fn=state;
     s.timer=d;
@@ -233,13 +235,15 @@ public:
     _states.push_front(s);
   };
   void nextState(){
+    if(_DEBUG_)Serial.println(F("nextState>>>"));
     if(_states.size()>0){
       _prevState = _state.fn;
       if(_states.size()>0){
         _state = _states.back();
         _states.pop_back();
         _c = 0;
-        D.drawToBuffer(_state.fn); // initializing 
+        D.drawToBuffer();
+        _state.fn()); // initializing 
         D.transition(_state.fx); // can be NULL
       }else{
         _state.fn=_defaultState;
@@ -249,6 +253,7 @@ public:
     }
   };
   void clearStates(){
+    if(_DEBUG_)Serial.println(F("clearStates"));
     _states.clear();
     _states.reserve(12);
   }

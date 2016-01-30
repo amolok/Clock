@@ -4,13 +4,13 @@
 
 // Fonts
 
-#define __A B01000000
-#define __B B00100000
-#define __C B00010000
+#define __A B00000001
+#define __B B00000010
+#define __C B00000100
 #define __D B00001000
-#define __E B00000100
-#define __F B00000010
-#define __G B00000001
+#define __E B00010000
+#define __F B00100000
+#define __G B01000000
 #define __p B10000000
 #define FNT_blank B00000000
 #define FNT_minus B01000000

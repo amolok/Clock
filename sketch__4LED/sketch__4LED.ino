@@ -1,3 +1,5 @@
+#define _DEBUG_ true
+
 #include <StandardCplusplus.h>
 //#include <system_configuration.h>
 //#include <unwind-cxx.h>
@@ -22,29 +24,31 @@ Clockwork Clock;
 
 // Time
 
-uint8_t Hour=      15;
-uint8_t Minute=    6;
+uint8_t Hour=      16;
+uint8_t Minute=    58;
 uint8_t Second=    1;
 uint8_t Day=       3;
 uint8_t DayofWeek= 3;   // Sunday is day 0
 uint8_t Month=     1;   // Jan is month 0
 uint8_t Year=2016-1900; // the Year minus 1900
 
+unsigned long _time; // millis()
+unsigned long _c; // 1/4s
+
 sSettings Settings;
 
 // The amount of time (in milliseconds) between tests
-#define TEST_DELAY   100
-
+#define TEST_DELAY   25
 
 void setup()
 {
   Settings.Day.Hour=9;
   Settings.Day.Minute=0;
-  Settings.Night.Hour=21;
+  Settings.Night.Hour=16;
   Settings.Night.Minute=0;
 
   Serial.begin(9600);
-  Serial.println(F("Internal Temperature Sensor"));
+  if(_DEBUG_)Serial.println(F("Setup..."));
   int k;
   uint8_t _D[] = { 0xff, 0xff, 0xff, 0xff };
   // All segments on
@@ -58,26 +62,38 @@ void setup()
 //  D.update();
   
 //  while(true) {
-    for(k = 4; k < 16; k++) {
-      D.setBrightness(k); 
-      D.setSegments(_D);
-      delay(TEST_DELAY); 
-    }
-    MachineInit();
-    for(k = 15; k >= 4; k--) {
-      D.setBrightness(k); 
-      D.setSegments(_D);
-      delay(TEST_DELAY); 
-    }
+  for(k = 4; k < 16; k++) {
+    D.setBrightness(k); 
+    D.setSegments(_D);
+    delay(TEST_DELAY); 
+  }
+  for(k = 15; k >= 4; k--) {
+    D.setBrightness(k); 
+    D.setSegments(_D);
+    delay(TEST_DELAY); 
+  }
 //  }
   D.setBrightness(0x08);
+  _time = millis();
+  MachineInit();
+}
+
+void loop()
+{
+  if((millis()-_time)>250){
+    _time=millis();
+    D.update();
+    if(_c%4==0){
+      // update();
+      // showTemp();
+    }
+  }
+  delay(50);
 }
 
 int prevTemp=0;
-int _c=0;
 
 void showTemp(){
-  // FNT F;
   int temp=(int)GetTemp();
   D._DD(0,temp);
   if(temp!=prevTemp){
@@ -100,7 +116,6 @@ void showTemp(){
 }
 
 void showTime(){
-  // FNT F;
   D._DD(0,12);
   D._DD(2,34);
   D.blink(1,F.dot);
@@ -110,16 +125,6 @@ void showTime(){
   delay(250);
   }  
 }
-
-void loop()
-{
-//  if(_c++ /3%2==0){
-    showTemp();
-//  }else{
-//    showTime();
-//  }
-}
-
 
 double GetTemp(void)
 {
@@ -221,6 +226,7 @@ void _fallBack(){
 };
 
 void addState(callbackFunction state , word d, transition_fx f){
+  if(_DEBUG_)Serial.println(F("<<<addState"));
   stateStruct s;
   s.fn=state;
   s.timer=d;
@@ -230,6 +236,8 @@ void addState(callbackFunction state , word d, transition_fx f){
 
 void nextState()
 {
+  // if(_DEBUG_)
+    Serial.println(F("nextState>>>"));
   if(_states.size()>0){
     _prevState = _state.fn;
     if(_states.size()>0){
@@ -240,7 +248,8 @@ void nextState()
       D.drawToBuffer();
       _state.fn();
 // can be NULL
-      D.transition(_state.f); 
+      D.transition(_state.f);
+      D.debug_print();
     }else{
       _state.fn=_defaultState;
       _state.f=fxCut;
@@ -255,6 +264,7 @@ void clearStates(){
 }
 void MachineInit(){
 // Sensor Sensors;
+  if(_DEBUG_)Serial.println(F("MachineInit..."));
   clearStates();
   Clock.init();
   tHHMM thm;
@@ -266,18 +276,23 @@ void MachineInit(){
 // void set(callbackFunction f){
 //   _refreshFunction=f;
 // };
-void update(){ // 1s
-  // if(_refreshFunction)_refreshFunction();
-  // if(_state.fn) 
-  // must use '.*' or '->*' to call pointer-to-member function in '((Machine*)this)->_state.stateStruct::fn (...)', e.g. '(... ->* ((Machine*)this)->_state.stateStruct::fn) (...)'
-  _state.fn();
+
+ // 1s
+void update(){
+  // if(_DEBUG_)Serial.println(F("<update>"));
+  if(_state.fn)_state.fn();
+// 0 = last state or shortest (1s) show
+  if(_state.timer==0){
+    if(_DEBUG_)Serial.println(F("[timer]"));
+    if(_states.size()>0) nextState();
+  }else{
+// all that >0 is a countdown
+    if(_state.timer-- >0)
+      if(_DEBUG_)Serial.println(F("<timer>"));
+    if(_state.timer==0) nextState();
+  };
   _c++;
-if(_state.timer==0){ // 0 = last state or shortest (1s) show
-  if(_states.size()>0) nextState();
-}else{
-if(_state.timer-- >0) // all that >0 is a countdown
-  if(_state.timer==0) nextState();
-};
+  tictac();
 };
 
 /*
@@ -323,11 +338,14 @@ void ClockSunrise(){Clock.Sunrise();}
 
 void DaylightClock(){
   if(_c==0) {
+    if(_DEBUG_)Serial.println(F("DaylightClock:"));
     clearStates();
+    D.setBrightness(0xff);
     _defaultState = &DaylightClock;
     // _onClick = &cycleOneClick;
     // _onDoubleClick = &cycleTwoClick;
     _onPress = clearStates;
+    addState(ClockHHMM, 1, fxCut);
   };
   if(Second==58){
     clearStates();
@@ -339,21 +357,27 @@ void DaylightClock(){
 // addState(Sensors.showHumidity, 1, fxUp);
 // addState(Sensors.showCO2, 1, fxUp);
     addState(_defaultState, 0, fxUp);      
-  }
-  if((Minute%15==14)&&(Second==0))
+  }else{
+    // if((Minute%15==14)&&(Second==0))
     // Sensors.update();
-  if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
-    clearStates();
-    addState(ClockSunset,1,fxDown);
-    addState(NightClock,0,fxDown);
+    if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
+      clearStates();
+      addState(ClockSunset,1,fxDown);
+      addState(NightClock,0,fxDown);
+    }else 
+      addState(ClockHHMM, 0, fxCut);
   }
 };
 void NightClock(){
+  if(_DEBUG_)Serial.println(F("NightClock:"));
   if(_c==0){
     clearStates();
+    D.setBrightness(0x08);
     _defaultState = &NightClock;
-    addState(ClockHHMM, 5, fxLeft);
+    addState(ClockHHMM, 2, fxUp);
+    addState(ClockMMSS, 3, fxUp);
     // addState(Sensors.showTemp, 5, fxDown);
+    // addState(ClockMMSS,0,fxCut);
     addState(_defaultState, 0, fxUp);      
   }
   if(((Hour==Settings.Day.Hour)&&(Minute==Settings.Day.Minute))&&(Second==30)){
@@ -378,3 +402,14 @@ addState(_defaultState, 0, fxLeft); // go back to [HH:MM]
 }
 }
 */
+
+void tictac(){
+  if(++Second>=60){         Second=0;
+    if(++Minute>=60){       Minute=0;
+      if(++Hour>=24){       Hour=0;
+        if(++DayofWeek>=7){ DayofWeek=0;
+        } if(++Day>31){     Day=0;
+          if(++Month>=12){  Month=0;
+            ++Year;
+} } } } }
+}
