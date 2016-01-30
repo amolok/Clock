@@ -2,8 +2,8 @@
 //#include <system_configuration.h>
 //#include <unwind-cxx.h>
 //#include <utility.h>
-
 #include <Arduino.h>
+
 // #include <vector>
 //#include <TM1637Display.h>
 #include "font.h"
@@ -12,11 +12,15 @@ FNT F;
 #endif
 #include "display.h" 
 #ifndef D
-Display4LED2 D;
+Display4LED2 D = Display4LED2();
 #endif
 #include "clock.h" 
 #include "settings.h"
 Clockwork Clock;
+
+// Module connection pins (Digital Pins)
+
+// Time
 
 uint8_t Hour=      15;
 uint8_t Minute=    6;
@@ -59,6 +63,7 @@ void setup()
       D.setSegments(_D);
       delay(TEST_DELAY); 
     }
+    MachineInit();
     for(k = 15; k >= 4; k--) {
       D.setBrightness(k); 
       D.setSegments(_D);
@@ -248,7 +253,7 @@ void clearStates(){
   _states.clear();
   _states.reserve(12);
 }
-void Machine(){
+void MachineInit(){
 // Sensor Sensors;
   clearStates();
   Clock.init();
@@ -256,13 +261,13 @@ void Machine(){
   thm.Hour = Hour; thm.Minute = Minute;
   _setDefaultState();
   addState(_defaultState, 0, fxCut);
-  Clock.set(update);
+  D.setRefresh(update);
 };
-void set(callbackFunction f){
-  _refreshFunction=f;
-};
+// void set(callbackFunction f){
+//   _refreshFunction=f;
+// };
 void update(){ // 1s
-  if(_refreshFunction)_refreshFunction();
+  // if(_refreshFunction)_refreshFunction();
   // if(_state.fn) 
   // must use '.*' or '->*' to call pointer-to-member function in '((Machine*)this)->_state.stateStruct::fn (...)', e.g. '(... ->* ((Machine*)this)->_state.stateStruct::fn) (...)'
   _state.fn();
@@ -308,10 +313,14 @@ void cycleTwoClick(){
 //   }
 // };
 */
+
+// States
+
 void ClockHHMM(){Clock.HHMM();}
 void ClockMMSS(){Clock.MMSS();}
 void ClockSunset(){Clock.Sunset();}
 void ClockSunrise(){Clock.Sunrise();}
+
 void DaylightClock(){
   if(_c==0) {
     clearStates();

@@ -7,7 +7,7 @@
 
 TM1637Display display(CLK, DIO);
 
-Display4LED2::Display4LED2()
+void Display4LED2::init(void)
 {
   _refreshFunc = NULL;
 //  _updateFunc = &Display4LED2::animator;

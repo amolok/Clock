@@ -3,9 +3,7 @@
 #include <TM1637Display.h>
 #include <vector>
 #include <string>
-// Module connection pins (Digital Pins)
-#define CLK 2
-#define DIO 3
+#include "settings.h"
 
 extern "C" {
   typedef void (*callbackFunction)(void);
@@ -37,7 +35,7 @@ uint8_t _shift_L(uint8_t X); // C->E, B->F
 */
 
 public:
-Display4LED2();
+void init();
 void setSegments(const uint8_t segments[4]);
 void showNumberDec(int num, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0);
 void setBrightness(uint8_t b);

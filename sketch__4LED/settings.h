@@ -1,6 +1,11 @@
 #ifndef __settings__
 #define __settings__
 
+/* PIN */
+#define CLK 2
+#define DIO 3
+
+
 /* Settings */
 
 struct tHHMM
