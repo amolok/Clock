@@ -13,6 +13,8 @@ extern Display4LED2 D;
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
 
+#define _DEBUG_ false
+
 /*
 #define normalize(a,min,max) (byte)((word)((a-min)*100)/(max-min))
 #define normTemp(t) (signed int)((float)(t-TempSensorMin)/(TempSensorMax-TempSensorMin)*(TempSensorMaxT-TempSensorMinT)+TempSensorMinT)
@@ -77,8 +79,8 @@ void Sensors::_readBMP(){
   {
     float p = event.pressure * 0.75006375541921;
     // float p = event.pressure / 133.3223684;
-    {Serial.print(event.pressure); Serial.println("hPa");}
-    {Serial.print(p); Serial.println("mmHg");}
+    // {Serial.print(event.pressure); Serial.println("hPa");}
+    // {Serial.print(p); Serial.println("mmHg");}
     /* Display atmospheric pressue in hPa */
     Pressure.lastValue=Pressure.value;
     Pressure.value=p;
@@ -96,7 +98,7 @@ void Sensors::init(){
     Serial.print("!!! BMP085 is not detected ... Check your wiring or I2C ADDR !");
     while(1);
   }
-  displaySensorDetails();
+  // displaySensorDetails();
 };
 void Sensors::showTemp(){
 // [-12°] [-1°C] [ 0°C] [ 1°C] [12°C] [23°C]
@@ -121,9 +123,9 @@ void Sensors::showTemp(){
 
 void Sensors::showPressure(){
 // [750m]
-  Serial.print("Pressure: ");
-  Serial.print(floor(Pressure.value+0.5));
-  Serial.println("mmHg");
+  if(_DEBUG_)Serial.print("Pressure: ");
+  if(_DEBUG_)Serial.print(floor(Pressure.value+0.5));
+  if(_DEBUG_)Serial.println("mmHg");
   D._DDD(0, (floor(Pressure.value+0.5)));
   D._hold(3, F.Sensor.Pressure.sign);
   if(Pressure.value>Pressure.lastValue) D._ab(3, F.Sensor.Pressure.rise);

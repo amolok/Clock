@@ -1,7 +1,7 @@
 #include "display.h"
 #include "font.h"
 
-#define _DEBUG_ true
+#define _DEBUG_ false
 /*
     A A'
     B B'
@@ -138,8 +138,7 @@ void Display4LED2::_DD(uint8_t p, uint8_t x){ // [ 12 ] [02  ] 2 digits at posit
 };
 void Display4LED2::_DDD(uint8_t p, uint16_t x){ // [123 ] [001 ] 3 digits at position
     // if(p>1){ blink2(p, __A|__G|__D); return; };
-  Serial.print("_DDD=");
-  Serial.println(x);
+  // {Serial.print("_DDD="); Serial.println(x);}
   _hold(p,   F.d[(x/100)%10]);
   _hold(p+1, F.d[(x/10)%10]);
   _hold(p+2, F.d[x%10]);

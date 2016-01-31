@@ -112,20 +112,21 @@ void Clockwork::DDMM(){
 };
 void Clockwork::Week(){
   uint8_t d[4];
-  d[0]= (__A|__G|__D);
-  d[1]= (__A|__G);
-  d[2]= (__G|__D);
-  d[3]= F.week;
+  d[0]=F.blank;
+  d[1]=(__A|__G|__D);
+  d[2]=(__A|__G);
+  d[3]=(__G|__D);
+  // d[3]= F.week;
   D.hold(d);
   switch(DayofWeek){
-    case 1: D.blink(0,__A); break;
-    case 2: D.blink(0,__G); break;
-    case 3: D.blink(0,__D); break;
-    case 4: D.blink(1,__A); break;
-    case 5: D.blink(1,__G); break;
-    case 6: D.blink(2,__G); break;
-    case 0: D.blink(2,__D); break;
-    default: D.blink2(3,F.minus);
+    case 1: D.blink(1,__A); break;
+    case 2: D.blink(1,__G); break;
+    case 3: D.blink(1,__D); break;
+    case 4: D.blink(2,__A); break;
+    case 5: D.blink(2,__G); break;
+    case 6: D.blink(3,__G); break;
+    case 0: D.blink(3,__D); break;
+    default: D.blink2(0,F.minus);
   };
 };
 void Clockwork::YYYY(){
