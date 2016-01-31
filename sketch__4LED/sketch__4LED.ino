@@ -374,11 +374,11 @@ void cycleOneClick(){
   #endif
   S.update();
   addState(ShowTemp,     3, fxDown);
-  addState(ShowPressure, 3, fxDown);
   addState(ShowHumidity, 3, fxDown);
+  addState(ShowPressure, 3, fxDown);
   // addState(ShowCO2, 1, fxDown);
   setDefaultState();
-  addState(ClockHHMM,0, fxUp);
+  addState(_defaultState,0, fxUp);
   // _onClick=nextState;
   // _onDoubleClick=NULL;
   // _onPress=_fallBack;
@@ -395,9 +395,9 @@ void cycleTwoClick(){
 // addState(DDWDMM, 1, fxRight);
   addState(ClockDDWD, 2, fxRight);
   addState(ClockDDMM, 2, fxDown);
-  addState(ClockYYYY, 3, fxLeft);
+  addState(ClockYYYY, 3, fxRight);
   setDefaultState();
-  addState(ClockHHMM, 1, fxUp);
+  addState(_defaultState, 0, fxRight);
   // _onClick=nextState;
   // _onDoubleClick=NULL;
   // _onPress=ClockMenu;
@@ -510,15 +510,15 @@ void NightClock(){
     _onPress = _fallBack;
     addState(ClockHHMM, 0, fxCut);
     // addState(ClockMMSS, 3, fxRight);
-    if(Second==5){
-      addState(ShowTemp,     5, fxDown);
-      addState(ShowHumidity, 5, fxDown);
-      addState(ShowPressure, 5, fxDown);
-    // addState(ClockMMSS,0,fxCut);
-      addState(_defaultState,0, fxCut);
-    }
   }
-  if(((Hour==Settings.Day.Hour)&&(Minute==Settings.Day.Minute))&&(Second==30)){
+  if(Second==5){
+    addState(ShowTemp,     5, fxDown);
+    addState(ShowHumidity, 5, fxDown);
+    addState(ShowPressure, 5, fxDown);
+    addState(ClockMMSS,0,fxUp);
+    addState(_defaultState,0, fxCut);
+  }
+  if(((Hour==Settings.DayTime.Hour)&&(Minute==Settings.DayTime.Minute))&&(Second==30)){
     clearStates();
     addState(ClockSunrise, 1,fxUp);
     addState(DaylightClock,0,fxUp);
@@ -556,23 +556,24 @@ void DaylightClock(){
   if(Second==58){
     S.update();
     clearStates();
-    addState(ClockMMSS,    2, fxRight);
+    addState(ClockMMSS,    5, fxRight);
     addState(ClockHHMM,    2, fxLeft);
     addState(ShowTemp,     3, fxUp);
     addState(ShowPressure, 3, fxUp);
     addState(ShowHumidity, 3, fxUp);
     // addState(ShowCO2,   1, fxUp);
-    addState(_defaultState,0, fxDown);      
+    addState(ClockHHMM,0, fxDown);      
+    addState(_defaultState,0, fxCut);      
   }else{
     // if((Minute%15==14)&&(Second==0))
     // S.update();
-    if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
+    if(((Hour==Settings.NightTime.Hour)&&(Minute==Settings.NightTime.Minute))&&(Second==30)){
       clearStates();
       addState(ClockSunset,1,fxDown);
       addState(NightClock, 0,fxDown);
     }else {
       // Serial.println("yep, here!");
-      addState(ClockHHMM,  0, fxCut);
+      addState(_defaultState,  0, fxCut);
     }
   }
 };
