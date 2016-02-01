@@ -1,4 +1,5 @@
 #define _DEBUG_
+char compileTime[] = __TIME__;
 
 #include <StandardCplusplus.h>
 //#include <system_configuration.h>
@@ -28,11 +29,11 @@ Sensors S;
 
 // Time
 
-uint8_t Hour=      5;
-uint8_t Minute=    20;
+uint8_t Hour=      0;
+uint8_t Minute=    58;
 uint8_t Second=    0;
-uint8_t Day=       31;
-uint8_t DayofWeek= 0;   // Sunday is day 0
+uint8_t Day=       1;
+uint8_t DayofWeek= 1;   // Sunday is day 0
 uint8_t Month=     1;   // Jan is month 0
 uint8_t Year=2016-1900; // the Year minus 1900
 
@@ -46,6 +47,10 @@ sSettings Settings;
 
 void setup()
 {
+  Serial.println( "Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
+  Hour = getInt(compileTime, 0);
+  Minute = getInt(compileTime, 3);
+  Second = getInt(compileTime, 6);
   Settings.Day.Hour=9;
   Settings.Day.Minute=0;
   Settings.Night.Hour=17;
@@ -66,7 +71,7 @@ void setup()
   _D[3]=B00001111;
   D.setSegments(_D);
 //  D.update();
-  
+
 //  while(true) {
   for(k = 4; k < 16; k++) {
     D.setBrightness(k); 
@@ -90,7 +95,7 @@ void setup()
 void loop()
 {
   Button.tick();
-  if((millis()-_time)>250){
+  if((millis()-_time)>240){
     _time=millis();
     D.update();
   }
@@ -252,28 +257,26 @@ void nextState()
   // const uint8_t _D[4]={F.blank,F.blank,F.blank,F.blank}; D.hold(_D);
   if(_states.size()>0){
     _prevState = _state.fn;
-    if(_states.size()>0){
-      _state = _states.back();
-      _states.pop_back();
+    _state = _states.back();
+    _states.pop_back();
       // initializing 
-      D.drawToBuffer();
     #ifdef _DEBUG_
-      Serial.print(F("preparing -- "));
+    Serial.print(F("preparing -- "));
     #endif
-      _c = 0;
-      _state.fn();
-      D.transition(_state.f);
+    _c = 0;
+    D.drawToBuffer();
+    _state.fn();
+    D.transition(_state.f);
       // D.debug_print();
-    }else{
+  }else{
     #ifdef _DEBUG_
-     Serial.println("<<<_defaultState");
+   Serial.println("<<<_defaultState");
     #endif
-     _state.fn=_defaultState;
-     _state.f=fxCut;
-     _state.timer=0;
-   }
+   _state.fn=_defaultState;
+   _state.f=fxCut;
+   _state.timer=0;
  }
-};
+}
 
 void clearStates(){
   _states.clear();
@@ -378,7 +381,7 @@ void cycleOneClick(){
   addState(ShowPressure, 3, fxDown);
   // addState(ShowCO2, 1, fxDown);
   setDefaultState();
-  addState(_defaultState,0, fxUp);
+  addState(_defaultState,0, fxDown);
   // _onClick=nextState;
   // _onDoubleClick=NULL;
   // _onPress=_fallBack;
@@ -396,8 +399,10 @@ void cycleTwoClick(){
   addState(ClockDDWD, 2, fxRight);
   addState(ClockDDMM, 2, fxDown);
   addState(ClockYYYY, 3, fxRight);
+  // addState(ClockSunset,  3, fxDown);
+  // addState(ClockSunrise, 3, fxDown);
   setDefaultState();
-  addState(_defaultState, 0, fxRight);
+  addState(_defaultState, 0, fxLeft);
   // _onClick=nextState;
   // _onDoubleClick=NULL;
   // _onPress=ClockMenu;
@@ -503,22 +508,48 @@ void NightClock(){
     clearStates();
     S.update();
     D.setBrightness(0x08);
+    ClockHHMM();
     // _defaultState = NightClock;
     _onClick = cycleOneClick;
     _onDoubleClick = cycleTwoClick;
     // _onDoubleClick = DaylightClock;
     _onPress = _fallBack;
-    addState(ClockHHMM, 0, fxCut);
+    // addState(ClockHHMM, 1, fxCut);
     // addState(ClockMMSS, 3, fxRight);
+  }else{
+    ClockHHMM();
   }
+  if(Second==57){
+    // addState(ClockMMSS,    3, fxRight);
+    // addState(ClockHHMM,    5, fxLeft);
+    addState(ShowTemp,     3, fxDown);
+    addState(ClockHHMM,    6, fxUp);
+    addState(ShowHumidity, 3, fxDown);
+    addState(ClockHHMM,   10, fxUp);
+    addState(ShowTemp,     3, fxDown);
+    addState(ClockHHMM,    6, fxUp);
+    addState(ShowHumidity, 3, fxDown);
+    addState(ClockHHMM,    6, fxUp);
+    addState(_defaultState,0, fxCut);
+  }
+  /*
   if(Second==5){
     addState(ShowTemp,     5, fxDown);
     addState(ShowHumidity, 5, fxDown);
     addState(ShowPressure, 5, fxDown);
-    addState(ClockMMSS,0,fxUp);
+    addState(ClockMMSS,    1, fxUp);
+    addState(ClockHHMM,    1, fxLeft);
     addState(_defaultState,0, fxCut);
   }
-  if(((Hour==Settings.DayTime.Hour)&&(Minute==Settings.DayTime.Minute))&&(Second==30)){
+  if(Second==30){
+    addState(ShowTemp,     5, fxDown);
+    addState(ClockHHMM,    5, fxUp);
+    addState(ShowHumidity, 5, fxDown);
+    addState(ClockHHMM,    5, fxUp);
+    addState(_defaultState,0, fxCut);
+  }
+  */
+  if(((Hour==Settings.Day.Hour)&&(Minute==Settings.Day.Minute))&&(Second==30)){
     clearStates();
     addState(ClockSunrise, 1,fxUp);
     addState(DaylightClock,0,fxUp);
@@ -552,22 +583,25 @@ void DaylightClock(){
     _onDoubleClick = cycleTwoClick;
     _onPress = _fallBack;
     addState(ClockHHMM, 0, fxCut);
+    // nextState();
   };
-  if(Second==58){
+  if(Second==55){
     S.update();
     clearStates();
-    addState(ClockMMSS,    5, fxRight);
-    addState(ClockHHMM,    2, fxLeft);
-    addState(ShowTemp,     3, fxUp);
-    addState(ShowPressure, 3, fxUp);
-    addState(ShowHumidity, 3, fxUp);
+    addState(ClockMMSS,    8, fxRight);
+    // addState(ClockHHMM,    8, fxLeft);
+    addState(ShowTemp,     4, fxRight);
+    addState(ShowHumidity, 4, fxRight);
+    addState(ShowPressure, 4, fxRight);
     // addState(ShowCO2,   1, fxUp);
-    addState(ClockHHMM,0, fxDown);      
+    addState(ClockHHMM,0, fxRight);      
     addState(_defaultState,0, fxCut);      
+    // addState(_defaultState,1, fxRight);
+    nextState();
   }else{
     // if((Minute%15==14)&&(Second==0))
     // S.update();
-    if(((Hour==Settings.NightTime.Hour)&&(Minute==Settings.NightTime.Minute))&&(Second==30)){
+    if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
       clearStates();
       addState(ClockSunset,1,fxDown);
       addState(NightClock, 0,fxDown);
@@ -587,4 +621,7 @@ void tictac(){
           if(++Month>=12){  Month=0;
             ++Year;
 } } } } }
+}
+char getInt(const char* string, int startIndex) {
+  return int(string[startIndex] - '0') * 10 + int(string[startIndex+1]) - '0';
 }
