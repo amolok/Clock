@@ -95,7 +95,7 @@ void setup()
 void loop()
 {
   Button.tick();
-  if((millis()-_time)>240){
+  if((millis()-_time)>250){
     _time=millis();
     D.update();
   }
@@ -319,6 +319,7 @@ void MachineInit(){
   Clock.init();
   setDefaultState();
   addState(_defaultState, 0, fxCut);
+  _c=0;
   D.setRefresh(update);
   #ifdef _DEBUG_
   Serial.println(" complete.");
@@ -370,44 +371,6 @@ void update(){
   tictac();
 };
 
-void cycleOneClick(){
-  clearStates();
-  #ifdef _DEBUG_
-  Serial.println("cycleOneClick");
-  #endif
-  S.update();
-  addState(ShowTemp,     3, fxDown);
-  addState(ShowHumidity, 3, fxDown);
-  addState(ShowPressure, 3, fxDown);
-  // addState(ShowCO2, 1, fxDown);
-  setDefaultState();
-  addState(_defaultState,0, fxDown);
-  // _onClick=nextState;
-  // _onDoubleClick=NULL;
-  // _onPress=_fallBack;
-// nextState();
-};
-
-void cycleTwoClick(){
-  clearStates();
-  #ifdef _DEBUG_
-  Serial.println(F("cycleTwoClick"));
-  #endif
-  addState(ClockMMSS, 5, fxRight);
-  addState(ClockWeek, 5, fxRight);
-// addState(DDWDMM, 1, fxRight);
-  addState(ClockDDWD, 2, fxRight);
-  addState(ClockDDMM, 2, fxDown);
-  addState(ClockYYYY, 3, fxRight);
-  // addState(ClockSunset,  3, fxDown);
-  // addState(ClockSunrise, 3, fxDown);
-  setDefaultState();
-  addState(_defaultState, 0, fxLeft);
-  // _onClick=nextState;
-  // _onDoubleClick=NULL;
-  // _onPress=ClockMenu;
-// nextState();
-};
 // void Scroller(){
 //   if(_c==0){
 //   }
@@ -415,7 +378,9 @@ void cycleTwoClick(){
 
 
 // States
-
+void ClockBlankBlink(){
+  Clock.BlankBlink(); 
+}
 void ClockHHMM(){
   #ifdef _DEBUG_
   // Serial.print(".");
@@ -476,6 +441,63 @@ void ClockSunrise(){Clock.Sunrise();}
 
 // extern void NightClock(void);
 
+
+void cyclePopupInnerCondiotions(){
+  addState(ShowTemp,     3, fxDown);
+  addState(ClockHHMM,    6, fxUp);
+  addState(ShowHumidity, 3, fxDown);
+  // addState(ClockHHMM,   10, fxUp);
+}
+
+void cycleOneClick(){
+  clearStates();
+  #ifdef _DEBUG_
+  Serial.println("cycleOneClick");
+  #endif
+  S.update();
+  addState(ShowTemp,     3, fxDown);
+  addState(ShowHumidity, 3, fxDown);
+  addState(ShowPressure, 3, fxDown);
+  // addState(ShowCO2, 1, fxDown);
+  setDefaultState();
+  addState(_defaultState,0, fxDown);
+  _onClick=nextState;
+  // _onDoubleClick=NULL;
+  _onPress=_fallBack;
+// nextState();
+};
+
+void cycleDate(){
+    addState(ClockMMSS, 5, fxRight);
+    addState(ClockWeek, 5, fxRight);
+    addState(ClockDDWD, 2, fxUp);
+    addState(ClockDDMM, 2, fxDown);
+    addState(ClockYYYY, 3, fxRight);
+}
+
+void cycleTwoClick(){
+  clearStates();
+  #ifdef _DEBUG_
+  Serial.println(F("cycleTwoClick"));
+  #endif
+  cycleDate();
+  // addState(ClockSunset,  3, fxDown);
+  // addState(ClockSunrise, 3, fxDown);
+  setDefaultState();
+  addState(_defaultState, 0, fxRight);
+  _onClick=nextState;
+  // _onDoubleClick=NULL;
+  _onPress=DeepNightClock;
+// nextState();
+};
+
+void cycleSensors(){
+  addState(ShowPressure, 3, fxRight);
+  addState(ShowTemp,     3, fxRight);
+  addState(ShowHumidity, 3, fxRight);
+  // addState(ClockMMSS,0,fxUp);
+}
+
 void ShowSensors(){
   #ifdef _DEBUG_
   Serial.println("ShowSensors");
@@ -489,11 +511,8 @@ void ShowSensors(){
     _onPress = _fallBack;
     S.update();
     D.setBrightness(0x08);
-    addState(ShowPressure, 3, fxRight);
-    addState(ShowTemp,     3, fxRight);
-    addState(ShowHumidity, 3, fxRight);
-    // addState(ClockMMSS,0,fxUp);
-    addState(_defaultState,1, fxCut);      
+    cycleSensors();
+    addState(_defaultState,0, fxCut);      
   }  
 };
 
@@ -519,18 +538,31 @@ void NightClock(){
   }else{
     ClockHHMM();
   }
+  if((Minute==59)&&(Second==56)){
+    cycleDate();
+    addState(ClockHHMM,   10, fxLeft);
+    addState(ShowTemp,     3, fxDown);
+    addState(ClockHHMM,    6, fxUp);
+    addState(ShowHumidity, 3, fxDown);
+    addState(ClockHHMM,    1, fxUp);
+    // addState(_defaultState,0, fxCut);
+  }
   if(Second==57){
-    // addState(ClockMMSS,    3, fxRight);
-    // addState(ClockHHMM,    5, fxLeft);
-    addState(ShowTemp,     3, fxDown);
-    addState(ClockHHMM,    6, fxUp);
-    addState(ShowHumidity, 3, fxDown);
-    addState(ClockHHMM,   10, fxUp);
-    addState(ShowTemp,     3, fxDown);
-    addState(ClockHHMM,    6, fxUp);
-    addState(ShowHumidity, 3, fxDown);
-    addState(ClockHHMM,    6, fxUp);
-    addState(_defaultState,0, fxCut);
+    // S.update();
+    addState(ClockMMSS,    6, fxRight);
+    addState(ClockHHMM,    6, fxLeft);
+    cyclePopupInnerCondiotions();
+    addState(ClockHHMM,    1, fxUp);
+    // addState(_defaultState,0, fxCut);
+  }
+  if(Second==30){
+    cyclePopupInnerCondiotions();
+    addState(ClockHHMM,    1, fxUp);
+    // addState(_defaultState,0, fxCut);
+  }
+  if(Second==40){
+    addState(ClockMMSS,   12, fxRight);
+    addState(ClockHHMM,    1, fxLeft);
   }
   /*
   if(Second==5){
@@ -555,22 +587,7 @@ void NightClock(){
     addState(DaylightClock,0,fxUp);
   }    
 };
-/*
-void ClockMenu(){
-if(_c==0){
-clearStates();
-Menu.init();
-addState(Menu.show, 0, fxLeft);
-_onClick=Menu.nextMenu;
-_onDoubleClick=Menu.set;
-_onPress=Menu.back;
-}
-if(Menu.update)Menu.update();
-if(Menu.exitMenu){
-addState(_defaultState, 0, fxLeft); // go back to [HH:MM]
-}
-}
-*/
+
 void DaylightClock(){
   #ifdef _DEBUG_
   Serial.println(F("DaylightClock"));
@@ -612,6 +629,55 @@ void DaylightClock(){
   }
 };
 
+void cycleNightClick(){
+  addState(ClockHHMM, 4, fxUp);
+  cycleSensors();
+  addState(ClockHHMM, 4, fxLeft);
+  addState(ClockMMSS, 90, fxLeft);
+}
+
+void DeepNightClock(){
+  #ifdef _DEBUG_
+  Serial.println(F("DeepNightClock"));
+  #endif
+  if(_c==0) {
+    clearStates();
+    D.setBrightness(0x08);
+    // _defaultState = DeepNightClock;
+    _onClick = cycleNightClick;
+    _onDoubleClick = cycleTwoClick;
+    _onPress = _fallBack;
+    addState(ClockHHMM, 3, fxCut);
+    // nextState();
+  };
+  if(Second==59){
+    S.update();
+    clearStates();
+    addState(ClockHHMM,3, fxCut);
+    addState(ClockBlankBlink,3, fxFade);
+
+  }else{
+    a
+}
+
+/*
+void ClockMenu(){
+if(_c==0){
+clearStates();
+Menu.init();
+addState(Menu.show, 0, fxLeft);
+_onClick=Menu.nextMenu;
+_onDoubleClick=Menu.set;
+_onPress=Menu.back;
+}
+if(Menu.update)Menu.update();
+if(Menu.exitMenu){
+addState(_defaultState, 0, fxLeft); // go back to [HH:MM]
+}
+}
+*/
+
+
 void tictac(){
   if(++Second>=60){         Second=0;
     if(++Minute>=60){       Minute=0;
@@ -620,7 +686,11 @@ void tictac(){
         } if(++Day>31){     Day=0;
           if(++Month>=12){  Month=0;
             ++Year;
-} } } } }
+          }
+        }
+      } 
+    } 
+  }
 }
 char getInt(const char* string, int startIndex) {
   return int(string[startIndex] - '0') * 10 + int(string[startIndex+1]) - '0';
