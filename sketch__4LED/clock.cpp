@@ -78,10 +78,10 @@ void Clockwork::MMSS(){
   D.blink(1,F.dot);
 };
 void Clockwork::HHMM(){
-  if(Minute<59){
-    D._hold(0, F.d[Hour/10]);
-    D._hold(1, F.d[Hour%10]);
-  }
+  // if(Minute<59){
+  D._hold(0, F.d[Hour/10]);
+  D._hold(1, F.d[Hour%10]);
+  // }
   if(Second<59){
     D._hold(2, F.d[Minute/10]);
     D._hold(3, F.d[Minute%10]);

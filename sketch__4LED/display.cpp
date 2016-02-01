@@ -60,18 +60,22 @@ void Display4LED2::transition(transition_fx x){
     down(       _AB[0][3],_AB[1][3]);
     break;
     case fxLeft:
-    scrollLeft( _AB[0][3],_AB[1][3]);
+    scrollLeft( _AB[0][2],_AB[1][3]);
     break;
     case fxRight:
-    scrollRight(_AB[0][3],_AB[1][3]);
+    scrollRight(_AB[0][2],_AB[1][3]);
     break;
     case fxCut:
+    default:
     _p(0, _AB[1][0]);
     _p(0, _AB[1][1]);
     _p(0, _AB[1][2]);
     _p(0, _AB[1][3]);
-    default:
     return;
+  _p(0, _AB[1][0]);
+  _p(0, _AB[1][1]);
+  _p(0, _AB[1][2]);
+  _p(0, _AB[1][3]);
   };
   _cut();
 };
