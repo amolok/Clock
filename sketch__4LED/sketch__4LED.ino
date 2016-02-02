@@ -1,4 +1,8 @@
-#define _DEBUG_
+// #define _DEBUG_ 
+#include <Wire.h>
+#include "RTClib.h"
+RTC_DS1307 RTC;
+
 char compileTime[] = __TIME__;
 
 #include <StandardCplusplus.h>
@@ -44,29 +48,66 @@ sSettings Settings;
 
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   25
+void printTime(){
+  Serial.print('\n> ');
+  Serial.print(DayofWeek, DEC);
+  Serial.print(', ');
+  Serial.print(Day, DEC);
+  Serial.print('/');
+  Serial.print(Month, DEC);
+  Serial.print('/');
+  Serial.print(Year, DEC);
+  Serial.print(' ');
+  Serial.print(Hour, DEC);
+  Serial.print(':');
+  Serial.print(Minute, DEC);
+  Serial.print(':');
+  Serial.print(Second, DEC);
+  Serial.print(' ');
+}
+void getTime(){
+  DateTime now = RTC.now();
+  Day=    now.day();          // The day now (1-31)
+  Month=  now.month();        // The month now (1-12)
+  Year=   now.year()-1900;         // The full four digit year: (2009, 2010 etc)
+  Hour=   now.hour();         // The hour now  (0-23)
+  Minute= now.minute();       // The minute now (0-59)
+  Second= now.second();       // The second now (0-59)
+  DayofWeek=now.dayOfTheWeek();  // Day of the week, Sunday is day 1
+  // DayofWeek=(now.dayOfTheWeek()+6)%7;  // Day of the week, Sunday is day 1
+  #ifdef _DEBUG_
+  printTime();
+  #endif
+}
 
 void setup()
 {
+  Serial.begin(9600);
+  #ifdef _DEBUG_
+  Serial.println(F("Setup..."));
+  #endif
   Serial.println( "Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
-  Hour = getInt(compileTime, 0);
-  Minute = getInt(compileTime, 3);
-  Second = getInt(compileTime, 6);
+  RTC.begin();
+  // Compilation time correction
+    // RTC.adjust(DateTime(__DATE__, __TIME__));
+  if (! RTC.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    RTC.adjust(DateTime(__DATE__, __TIME__));
+  }
+
+  printTime();
   Settings.Day.Hour=9;
   Settings.Day.Minute=0;
   Settings.Night.Hour=17;
   Settings.Night.Minute=0;
 
-  Serial.begin(9600);
-  #ifdef _DEBUG_
-  Serial.println(F("Setup..."));
-  #endif
   int k;
   uint8_t _D[] = { 0xff, 0xff, 0xff, 0xff };
   // All segments on
   D.setSegments(_D);
   delay(TEST_DELAY);
   _D[0]=B00111001;
-  _D[1]=B10001001;
+  _D[1]=B00001001;
   _D[2]=B00001001;
   _D[3]=B00001111;
   D.setSegments(_D);
@@ -94,6 +135,7 @@ void setup()
 
 void loop()
 {
+  getTime(); // !!! no time sync yet
   Button.tick();
   if((millis()-_time)>240){
     _time=millis();
@@ -126,16 +168,6 @@ void showTemp(){
   }  
 }
 */
-void showTime(){
-  D._DD(0,12);
-  D._DD(2,34);
-  D.blink(1,F.dot);
-  
-  for(uint8_t i=0;i<4;i++){
-  D.update();
-  delay(250);
-  }  
-}
 
 double GetTemp(void)
 {
@@ -235,7 +267,7 @@ void setDefaultState(){
 void _fallBack(){
   setDefaultState();
   clearStates();
-  // addState(_defaultState,0,fxCut);
+  addState(_defaultState,0,fxCut);
 };
 
 void addState(callbackFunction state , word d, transition_fx f){
@@ -317,6 +349,7 @@ void MachineInit(){
   // Button.attachLongPressStop(onPress);
   Button.attachLongPressStart(onPress);
   Clock.init();
+  _c=0;
   setDefaultState();
   addState(_defaultState, 0, fxCut);
   D.setRefresh(update);
@@ -381,10 +414,11 @@ void cycleOneClick(){
   addState(ShowPressure, 3, fxDown);
   // addState(ShowCO2, 1, fxDown);
   setDefaultState();
-  addState(_defaultState,0, fxDown);
-  // _onClick=nextState;
+  addState(ClockHHMM,0, fxDown);
+  addState(_fallBack,0, fxCut);
+  _onClick=nextState;
   // _onDoubleClick=NULL;
-  // _onPress=_fallBack;
+  _onPress=_fallBack;
 // nextState();
 };
 
@@ -396,16 +430,17 @@ void cycleTwoClick(){
   addState(ClockMMSS, 5, fxRight);
   addState(ClockWeek, 5, fxRight);
 // addState(DDWDMM, 1, fxRight);
-  addState(ClockDDWD, 2, fxRight);
-  addState(ClockDDMM, 2, fxDown);
+  addState(ClockDDWD, 3, fxRight);
+  addState(ClockDDMM, 3, fxDown);
   addState(ClockYYYY, 3, fxRight);
   // addState(ClockSunset,  3, fxDown);
   // addState(ClockSunrise, 3, fxDown);
   setDefaultState();
-  addState(_defaultState, 0, fxLeft);
-  // _onClick=nextState;
+  addState(ClockHHMM, 0, fxLeft);
+  addState(_fallBack, 0, fxCut);
+  _onClick=nextState;
   // _onDoubleClick=NULL;
-  // _onPress=ClockMenu;
+  _onPress=_fallBack;
 // nextState();
 };
 // void Scroller(){

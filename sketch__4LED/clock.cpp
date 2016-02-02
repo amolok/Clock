@@ -106,8 +106,8 @@ void Clockwork::DDWD(){
 void Clockwork::DDMM(){
   D._hold(0, F.d[Day/10]);
   D._hold(1, F.d[Day%10]);
-  D._hold(2, F.d[(Month+1)/10]);
-  D._hold(3, F.d[(Month+1)%10]);
+  D._hold(2, F.d[(Month)/10]);
+  D._hold(3, F.d[(Month)%10]);
   D.on(1, F.dot);
 };
 void Clockwork::Week(){
@@ -130,6 +130,7 @@ void Clockwork::Week(){
   };
 };
 void Clockwork::YYYY(){
+  // D._DD(0, (Year)/100);
   D._DD(0, (Year+1900)/100);
   D._DD(2, Year%100);
   D.on(3, F.dot);
