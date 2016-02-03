@@ -12,8 +12,9 @@
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 
+#define GASPIN A0
 
-#include "DHT.h"
+// #include "DHT.h"
 /*
 #define normalize(a,min,max) (byte)((word)((a-min)*100)/(max-min))
 #define normTemp(t) (signed int)((float)(t-TempSensorMin)/(TempSensorMax-TempSensorMin)*(TempSensorMaxT-TempSensorMinT)+TempSensorMinT)
@@ -66,8 +67,9 @@ class Sensors
 private:
   void _readDHT();
   void _readBMP();
+  void _readCO2();
 public:
-  sHistory Temp, Humidity, Pressure; // CO2, Light;
+  sHistory Temp, Humidity, Pressure, CO2; // Light;
   void update();
   void init();
   // [-12°] [-1°C] [ 0°C] [ 1°C] [12°C] [23°C]
@@ -76,10 +78,8 @@ public:
   void showHumidity();
   // [750m]
   void showPressure();
-/*
   // [1200]
   void showCO2();
-*/
 };
 
 #endif

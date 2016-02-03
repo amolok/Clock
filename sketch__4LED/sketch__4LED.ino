@@ -1,4 +1,4 @@
-// #define _DEBUG_ 
+#define _DEBUG_ 
 #include <Wire.h>
 #include "RTClib.h"
 RTC_DS1307 RTC;
@@ -76,7 +76,7 @@ void getTime(){
   DayofWeek=now.dayOfTheWeek();  // Day of the week, Sunday is day 1
   // DayofWeek=(now.dayOfTheWeek()+6)%7;  // Day of the week, Sunday is day 1
   #ifdef _DEBUG_
-  printTime();
+  // printTime();
   #endif
 }
 
@@ -89,18 +89,19 @@ void setup()
   Serial.println( "Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
   RTC.begin();
   // Compilation time correction
-    // RTC.adjust(DateTime(__DATE__, __TIME__));
+  // RTC.adjust(DateTime(__DATE__, __TIME__));
   if (! RTC.isrunning()) {
     Serial.println("RTC is NOT running!");
     RTC.adjust(DateTime(__DATE__, __TIME__));
   }
-
+  getTime();
   printTime();
   Settings.Day.Hour=9;
   Settings.Day.Minute=0;
   Settings.Night.Hour=17;
   Settings.Night.Minute=0;
 
+  /*
   int k;
   uint8_t _D[] = { 0xff, 0xff, 0xff, 0xff };
   // All segments on
@@ -119,25 +120,26 @@ void setup()
     D.setSegments(_D);
     delay(TEST_DELAY); 
   }
-
+  */
   S.init();
-
+  /*
   for(k = 15; k >= 4; k--) {
     D.setBrightness(k); 
     D.setSegments(_D);
     delay(TEST_DELAY); 
   }
 //  }
+  */
   D.setBrightness(0x08);
   _time = millis();
-  MachineInit();
+  MachineStart();
 }
 
 void loop()
 {
   getTime(); // !!! no time sync yet
   Button.tick();
-  if((millis()-_time)>240){
+  if((millis()-_time)>250){
     _time=millis();
     D.update();
   }
@@ -218,6 +220,19 @@ bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
 }
 bool _inTime(tHHMM begin, tHHMM end, tHHMM v)
 {
+  #ifdef _DEBUG_
+  Serial.print(v.Hour);
+  Serial.print(":");
+  Serial.print(v.Minute);
+  Serial.print(" in ");
+  Serial.print(begin.Hour);
+  Serial.print(":");
+  Serial.print(begin.Minute);
+  Serial.print("-");
+  Serial.print(end.Hour);
+  Serial.print(":");
+  Serial.print(end.Minute);
+  #endif
 //  ... > Sunrise > Day > Sunset > Night > ... [begin,end)
   if(_inHour(begin, end, v)) {
 // 16:41 === 16:40
@@ -254,20 +269,35 @@ callbackFunction _onDoubleClick;
 callbackFunction _onPress;
 // word _c; // counter [s] in current state = 45.51 h
 void setDefaultState(){
+  #ifdef _DEBUG_
+  Serial.print("[setDefaultState ");
+  #endif
   tHHMM thm;
   thm.Hour=Hour;
   thm.Minute=Minute;
-  if(_inTime(Settings.Day,Settings.Night,thm))
+  if(_inTime(Settings.Day,Settings.Night,thm)){
     _defaultState = DaylightClock;
-  else
+    #ifdef _DEBUG_
+    Serial.print(" DaylightClock]");
+    #endif
+  }
+  else{
     _defaultState = NightClock;
+    #ifdef _DEBUG_
+    Serial.print(" NightClock]");
+    #endif
+  }
   // _defaultState = ShowSensors;
 };
 
 void _fallBack(){
+  #ifdef _DEBUG_
+  Serial.print(F("<<<_fallBack "));
+  #endif
   setDefaultState();
   clearStates();
   addState(_defaultState,0,fxCut);
+  nextState();
 };
 
 void addState(callbackFunction state , word d, transition_fx f){
@@ -291,23 +321,28 @@ void nextState()
     _prevState = _state.fn;
     _state = _states.back();
     _states.pop_back();
-      // initializing 
-    #ifdef _DEBUG_
-    Serial.print(F("preparing -- "));
-    #endif
-    _c = 0;
-    D.drawToBuffer();
-    _state.fn();
-    D.transition(_state.f);
-      // D.debug_print();
+  // initializing 
   }else{
-    #ifdef _DEBUG_
-   Serial.println("<<<_defaultState");
-    #endif
-   _state.fn=_defaultState;
-   _state.f=fxCut;
-   _state.timer=0;
- }
+  #ifdef _DEBUG_
+    Serial.println("<<<_defaultState");
+  #endif
+    _state.fn=_defaultState;
+    _state.f=fxCut;
+    _state.timer=0;
+  }
+  #ifdef _DEBUG_
+  Serial.print(Hour);
+  Serial.print(":");
+  Serial.print(Minute);
+  Serial.print(":");
+  Serial.print(Second);
+  Serial.print(F("  \t"));
+  #endif
+  _c = 0;
+  D.drawToBuffer();
+  _state.fn();
+  D.transition(_state.f);
+  // D.debug_print();
 }
 
 void clearStates(){
@@ -334,9 +369,9 @@ void onPress(){
   Serial.print("\n");
 }
 
-void MachineInit(){
+void MachineStart(){
   #ifdef _DEBUG_
-  Serial.print("MachineInit...");
+  Serial.print("\n\nMachineStart... ");
   #endif
   clearStates();
   // set # millisec after single click is assumed.
@@ -351,10 +386,14 @@ void MachineInit(){
   Clock.init();
   _c=0;
   setDefaultState();
+  ClockYYYY();
+  addState(ClockDDMM,     1, fxCut);
+  addState(ClockHHMM,     1, fxCut);
   addState(_defaultState, 0, fxCut);
+  nextState();
   D.setRefresh(update);
   #ifdef _DEBUG_
-  Serial.println(" complete.");
+  Serial.println(" --- complete.");
   #endif
 };
 // void set(callbackFunction f){
@@ -370,6 +409,10 @@ void update(){
   else{
     // #ifdef _DEBUG_
     Serial.println("!!! undef _state.fn !!!");
+    // nextState();
+    // _fallBack();
+    // return;
+    // if(_defaultState)_defaultState();
     // #endif
   }
 // 0 = last state or shortest (1s) show
@@ -378,10 +421,14 @@ void update(){
     Serial.print(F("."));
     #endif
     if(_states.size()>0){
-      #ifdef _DEBUG_
-      Serial.println("<states>");
-      #endif
+      // #ifdef _DEBUG_
+      // Serial.println("<states>");
+      // #endif
       nextState();
+    }else{
+      // #ifdef _DEBUG_
+      // Serial.println("(states) ");
+      // #endif      
     }
   }else{
 // all that >0 is a countdown
@@ -400,7 +447,7 @@ void update(){
     }
   };
   _c++;
-  tictac();
+  // tictac();
 };
 
 void cycleOneClick(){
@@ -409,13 +456,13 @@ void cycleOneClick(){
   Serial.println("cycleOneClick");
   #endif
   S.update();
+  addState(ShowCO2,      3, fxDown);
   addState(ShowTemp,     3, fxDown);
   addState(ShowHumidity, 3, fxDown);
   addState(ShowPressure, 3, fxDown);
-  // addState(ShowCO2, 1, fxDown);
   setDefaultState();
-  addState(ClockHHMM,0, fxDown);
-  addState(_fallBack,0, fxCut);
+  addState(ClockHHMM,    0, fxDown);
+  addState(_fallBack,    0, fxCut);
   _onClick=nextState;
   // _onDoubleClick=NULL;
   _onPress=_fallBack;
@@ -460,51 +507,57 @@ void ClockHHMM(){
 }
 void ClockMMSS(){
   #ifdef _DEBUG_
-  Serial.print("ClockMMSS ");
+  if(_c==0)Serial.print("ClockMMSS ");
   #endif
   Clock.MMSS();
 }
 void ClockWeek(){
   #ifdef _DEBUG_
-  Serial.print("ClockWeek ");
+  if(_c==0)Serial.print("ClockWeek ");
   #endif
   Clock.Week();
 }
 void ClockDDWD(){
   #ifdef _DEBUG_
-  Serial.print("ClockDDWD ");
+  if(_c==0)Serial.print("ClockDDWD ");
   #endif
   Clock.DDWD();
 }
 void ClockDDMM(){
   #ifdef _DEBUG_
-  Serial.print("ClockDDMM ");
+  if(_c==0)Serial.print("ClockDDMM ");
   #endif
   Clock.DDMM();
 }
 void ClockYYYY(){
   #ifdef _DEBUG_
-  Serial.print("ClockYYYY ");
+  if(_c==0)Serial.print("ClockYYYY ");
   #endif
   Clock.YYYY();
 }
 void ShowTemp(){
   #ifdef _DEBUG_
-  Serial.print("ShowTemp ");
+  if(_c==0)Serial.print("ShowTemp ");
   #endif
   S.showTemp();
 }
 void ShowHumidity(){
   #ifdef _DEBUG_
-  Serial.print("ShowHumidity ");
+  if(_c==0)Serial.print("ShowHumidity ");
   #endif
   S.showHumidity();
 }
 void ShowPressure(){
   #ifdef _DEBUG_
-  Serial.print("ShowPressure ");
+  if(_c==0)Serial.print("ShowPressure ");
   #endif
   S.showPressure();
+}
+void ShowCO2(){
+  #ifdef _DEBUG_
+  if(_c==0)Serial.print("ShowCO2 ");
+  #endif
+  S.showCO2();  
 }
 void ClockSunset(){Clock.Sunset();}
 void ClockSunrise(){Clock.Sunrise();}
@@ -513,7 +566,7 @@ void ClockSunrise(){Clock.Sunrise();}
 
 void ShowSensors(){
   #ifdef _DEBUG_
-  Serial.println("ShowSensors");
+  if(_c==0)Serial.println("ShowSensors");
   #endif
   if(_c==0){
     clearStates();
@@ -533,9 +586,9 @@ void ShowSensors(){
 };
 
 void NightClock(){
-  #ifdef _DEBUG_
-  Serial.println("NightClock");
-  #endif
+  // #ifdef _DEBUG_
+  // Serial.println("NightClock");
+  // #endif
   if(_c==0){
     #ifdef _DEBUG_
     Serial.println("NightClock -- init");
@@ -560,6 +613,8 @@ void NightClock(){
     addState(ShowTemp,     3, fxDown);
     addState(ClockHHMM,    6, fxUp);
     addState(ShowHumidity, 3, fxDown);
+    addState(ClockHHMM,    6, fxUp);
+    addState(ShowCO2,      3, fxDown);
     addState(ClockHHMM,   10, fxUp);
     addState(ShowTemp,     3, fxDown);
     addState(ClockHHMM,    6, fxUp);
@@ -607,10 +662,10 @@ addState(_defaultState, 0, fxLeft); // go back to [HH:MM]
 }
 */
 void DaylightClock(){
-  #ifdef _DEBUG_
-  Serial.println(F("DaylightClock"));
-  #endif
   if(_c==0) {
+    #ifdef _DEBUG_
+    Serial.println(F("DaylightClock"));
+    #endif
     clearStates();
     D.setBrightness(0xff);
     // _defaultState = DaylightClock;
@@ -627,9 +682,9 @@ void DaylightClock(){
     // addState(ClockHHMM,    8, fxLeft);
     addState(ShowTemp,     4, fxRight);
     addState(ShowHumidity, 4, fxRight);
-    addState(ShowPressure, 4, fxRight);
-    // addState(ShowCO2,   1, fxUp);
-    addState(ClockHHMM,0, fxRight);      
+    addState(ShowCO2,      4, fxRight);
+    if(Minute%5==4) addState(ShowPressure, 4, fxRight);
+    addState(ClockHHMM,    0, fxRight);      
     addState(_defaultState,0, fxCut);      
     // addState(_defaultState,1, fxRight);
     nextState();
@@ -638,8 +693,9 @@ void DaylightClock(){
     // S.update();
     if(((Hour==Settings.Night.Hour)&&(Minute==Settings.Night.Minute))&&(Second==30)){
       clearStates();
-      addState(ClockSunset,1,fxDown);
-      addState(NightClock, 0,fxDown);
+      addState(ClockSunset,1,fxCut);
+      addState(NightClock, 0,fxCut);
+      setDefaultState();
     }else {
       // Serial.println("yep, here!");
       addState(_defaultState,  0, fxCut);

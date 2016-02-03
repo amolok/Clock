@@ -2,6 +2,7 @@
 #include "sensors.h"
 // #include "settings.h"
 #include "DHT.h"
+#include <MQ135.h>
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -12,6 +13,7 @@ extern Display4LED2 D;
 // extern sSettings Settings;
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085_Unified bmp = Adafruit_BMP085_Unified(10085);
+MQ135 gasSensor = MQ135(GASPIN);
 
 #define _DEBUG_ false
 
@@ -87,9 +89,16 @@ void Sensors::_readBMP(){
   }
 }
 
+void Sensors::_readCO2(){
+  float ppm = gasSensor.getPPM();
+  CO2.lastValue=CO2.value;
+  CO2.value=ppm;
+}
+
 void Sensors::update(){
   _readDHT();
   _readBMP();
+  _readCO2();
 };
 void Sensors::init(){
   dht.begin();
@@ -156,10 +165,17 @@ void Sensors::showHumidity(){
     D._hold(3, F.Sensor.Humidity.sign[1]);
   }
 };
-/*
+
 void Sensors::showCO2(){
   if(CO2.value>=1000)
     D._DDDD(CO2.value);
-  else D._DDD(1, CO2.value);
+  else {
+    D._hold(0, F.blank);
+    if(CO2.value<590)
+      D._ab(0,F.Sensor.CO2.low);
+    if(CO2.value>600)
+      D._ab(0,F.Sensor.CO2.high);
+    D._DDD(1, CO2.value);
+  }
 };
-*/
+

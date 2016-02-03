@@ -81,7 +81,7 @@ struct FNT
     B00110111, // П
     B01110011, // Р
     B00111001, // С
-    B00000111, // Т
+    B00110001, // Т
     B01100110  // Ч
   };
   struct sSun
@@ -113,13 +113,13 @@ struct FNT
         B00000000,
         B00001000,
         B01011100,
-        B01100011 
+        B01100011
       };
       const uint8_t fall[4]={
         B01100011,
         B01011100,
-        B00001001,
-        B01100011 
+        B00000001,
+        B01100011
       };
     };
     sTemp Temp;
@@ -172,24 +172,46 @@ struct FNT
         B01001000,
       };
       const uint8_t fall[4] = {
-        B00001001,
         B01001000,
         B00001000,
+        B00000000,
         B01001000,
       };
     };
     sPressure Pressure;
 
-/*
     struct sCO2
     {
     // CO2
-      const uint8_t ico[3]={celsius,d[0],d[2]};
+      const uint8_t ico[3]={
+        B00111001,
+        B00111111,
+        B01011011,
+      };
     // ppm
-      const uint8_t sign[3]={AbC['p'-'a'],AbC['p'-'a'],AbC['m'-'a']};
+      const uint8_t sign[3]={
+        B01110011,
+        B01110011,
+        B01001000,
+      };
+      // const uint8_t high={B01001001};
+      const uint8_t high[4] = {
+        B00000000,
+        B00001000,
+        B01001000,
+        B01001001,
+      };
+      // const uint8_t lowB00001000};
+      const uint8_t low[4] = {
+        B01001001,
+        B01001000,
+        B00001000,
+        B00000000,
+      };
     };
     sCO2 CO2;
 
+/*
     struct sLight
     {
     // L.

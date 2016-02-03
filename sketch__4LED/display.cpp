@@ -164,9 +164,13 @@ void Display4LED2::blink(uint8_t p, uint8_t C){
   // _AB[1][2][p]=_AB[1][2][p] & ~C;
   // _AB[1][3][p]=_AB[1][3][p] & ~C;
   _AB[_b][0][p]=_AB[_b][0][p] | C;
-  _AB[_b][1][p]=_AB[_b][1][p] | C;
+  _AB[_b][1][p]=_AB[_b][1][p] & ~C;
   _AB[_b][2][p]=_AB[_b][2][p] & ~C;
-  _AB[_b][3][p]=_AB[_b][3][p] & ~C;
+  _AB[_b][3][p]=_AB[_b][3][p] | C;
+  // _AB[_b][0][p]=_AB[_b][0][p] & ~C;
+  // _AB[_b][1][p]=_AB[_b][1][p] | C;
+  // _AB[_b][2][p]=_AB[_b][2][p] | C;
+  // _AB[_b][3][p]=_AB[_b][3][p] & ~C;
 };
 void Display4LED2::blink2(uint8_t p, uint8_t C){
   _AB[_b][0][p]=_AB[_b][0][p] | C;
