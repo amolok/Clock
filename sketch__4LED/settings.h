@@ -10,13 +10,17 @@
 
 struct tHHMM
 {
-  uint8_t Hour;
-  uint8_t Minute;
+  uint8_t Hour, Minute;
+};
+struct tInterleave
+{
+  tHHMM start, end;
 };
 
 struct sSettings
 {
   tHHMM Day, Night;
+  tInterleave Sleep;
   // tHHMM Sunrise, Sunset;
   // tHHMM Wakeup;
   // tHHMM Alarm;
