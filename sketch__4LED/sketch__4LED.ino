@@ -428,7 +428,8 @@ void update(){
     }else{
       // #ifdef _DEBUG_
       // Serial.println("(states) ");
-      // #endif      
+      // #endif  
+      _fallBack();    
     }
   }else{
 // all that >0 is a countdown
@@ -461,7 +462,7 @@ void cycleOneClick(){
   addState(ShowHumidity, 3, fxDown);
   addState(ShowPressure, 3, fxDown);
   setDefaultState();
-  addState(ClockHHMM,    0, fxDown);
+  addState(ClockHHMM,    3, fxDown);
   addState(_fallBack,    0, fxCut);
   _onClick=nextState;
   // _onDoubleClick=NULL;
@@ -474,7 +475,7 @@ void cycleTwoClick(){
   #ifdef _DEBUG_
   Serial.println(F("cycleTwoClick"));
   #endif
-  addState(ClockMMSS, 5, fxRight);
+  addState(ClockMMSS, 5, fxFadeRight);
   addState(ClockWeek, 5, fxRight);
 // addState(DDWDMM, 1, fxRight);
   addState(ClockDDWD, 3, fxRight);
@@ -483,7 +484,7 @@ void cycleTwoClick(){
   // addState(ClockSunset,  3, fxDown);
   // addState(ClockSunrise, 3, fxDown);
   setDefaultState();
-  addState(ClockHHMM, 0, fxLeft);
+  addState(ClockHHMM, 3, fxLeft);
   addState(_fallBack, 0, fxCut);
   _onClick=nextState;
   // _onDoubleClick=NULL;
@@ -608,8 +609,12 @@ void NightClock(){
     ClockHHMM();
   }
   if(Second==57){
-    // addState(ClockMMSS,    3, fxRight);
-    // addState(ClockHHMM,    5, fxLeft);
+    if(Minute%10==9){
+      addState(ClockHHMM, 7, fxCut);
+      addState(ClockMMSS, 3, fxFadeRight);
+      addState(ClockDDMM, 3, fxRight);
+      // addState(ClockHHMM, 5, fxLeft);
+    }
     addState(ShowTemp,     3, fxDown);
     addState(ClockHHMM,    6, fxUp);
     addState(ShowHumidity, 3, fxDown);

@@ -10,7 +10,7 @@ extern "C" {
 }
 enum transition_fx
 {
-  fxNone, fxCut, fxUp, fxDown, fxLeft, fxRight
+  fxNone, fxCut, fxUp, fxDown, fxLeft, fxRight, fxFadeLeft, fxFadeRight
 };
 class Display4LED2
 {
@@ -81,8 +81,10 @@ void up(uint8_t A[4], uint8_t B[4]);
 void down(uint8_t A[4], uint8_t B[4]);
 // ABCD←EFGH _ABC H_ABC GH_A FGH_
 void scrollLeft(uint8_t A[4], uint8_t B[4]);
+void fadeLeft(uint8_t A[4], uint8_t B[4]);
 // ABCD→EFGH BCDE CDEF DEFG EFGH
 void scrollRight(uint8_t A[4], uint8_t B[4]);
+void fadeRight(uint8_t A[4], uint8_t B[4]);
 // ABCD→EFGH ABCD CD__ __EF EFGH
 void right(uint8_t A[4], uint8_t B[4]);
 // ABCD←EFGH ABCD __AB GH__ EFGH

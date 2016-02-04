@@ -65,6 +65,12 @@ void Display4LED2::transition(transition_fx x){
     case fxRight:
     scrollRight(_AB[0][2],_AB[1][3]);
     break;
+    case fxFadeLeft:
+    fadeLeft( _AB[0][2],_AB[1][3]);
+    break;
+    case fxFadeRight:
+    fadeRight(_AB[0][2],_AB[1][3]);
+    break;
     case fxCut:
     default:
     _p(0, _AB[1][0]);
@@ -223,6 +229,29 @@ void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
   _AB[_b][3][2]=B[2];
   _AB[_b][3][3]=B[3];
 };
+void Display4LED2::fadeRight(uint8_t A[4], uint8_t B[4]){
+// ABCD→EFGH BCDE CDEF DEFG EFGH
+  if(_DEBUG_)Serial.println("scrollRight");
+  _AB[_b][0][0]=A[0];
+  _AB[_b][0][1]=A[1];
+  _AB[_b][0][2]=A[2] | B[0];
+  _AB[_b][0][3]=A[3] | B[1];
+
+  _AB[_b][1][0]=A[1];
+  _AB[_b][1][1]=A[2] | B[0];
+  _AB[_b][1][2]=A[3] | B[1];
+  _AB[_b][1][3]=B[2];
+
+  _AB[_b][2][0]=A[2] | B[0];
+  _AB[_b][2][1]=A[3] | B[1];
+  _AB[_b][2][2]=B[2];
+  _AB[_b][2][3]=B[3];
+
+  _AB[_b][3][0]=B[0];
+  _AB[_b][3][1]=B[1];
+  _AB[_b][3][2]=B[2];
+  _AB[_b][3][3]=B[3];
+};
 void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
 // ABCD→EFGH ABCD CD__ __EF EFGH
   if(_DEBUG_)Serial.println("right");
@@ -238,6 +267,30 @@ void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][2][2]=_B[0];
   _AB[_b][2][3]=_B[1];
   B(_B);
+};
+
+void Display4LED2::fadeLeft(uint8_t _A[4], uint8_t _B[4]){
+// ABCD←EFGH HABC GHAB FGHA EFGH
+  if(_DEBUG_)Serial.println(F("left"));
+  _AB[_b][0][0]=_A[0] | _B[2];
+  _AB[_b][0][1]=_A[1] | _B[3];
+  _AB[_b][0][2]=_A[2];
+  _AB[_b][0][3]=_A[3];
+
+  _AB[_b][1][0]=_B[1];
+  _AB[_b][1][1]=_A[0] | _B[2];
+  _AB[_b][1][2]=_A[1] | _B[3];
+  _AB[_b][1][3]=_A[2];
+
+  _AB[_b][2][0]=_B[0];
+  _AB[_b][2][1]=_B[1];
+  _AB[_b][2][2]=_A[0] | _B[2];
+  _AB[_b][2][3]=_A[1] | _B[3];
+
+  _AB[_b][3][0]=_B[0];
+  _AB[_b][3][1]=_B[1];
+  _AB[_b][3][2]=_B[2];
+  _AB[_b][3][3]=_B[3];
 };
 
 void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
@@ -283,7 +336,8 @@ void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][3][2]=_B[3];
   _AB[_b][3][3]=F.blank;
 };
-*/void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
+*/
+void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
 // ABCD←EFGH ABCD __AB GH__ EFGH
   if(_DEBUG_)Serial.println(F("left"));
   // A(_A);
