@@ -23,6 +23,7 @@ private:
 public:
   void init(void);
   // void set(callbackFunction f);
+  void BlankBlink(void);
   void MMSS(void);
   void HHMM(void);
   void _WD(uint8_t p, uint8_t wd);

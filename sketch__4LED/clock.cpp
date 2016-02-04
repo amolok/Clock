@@ -93,6 +93,13 @@ void Clockwork::HHMM(){
   }
   D.blink(1,F.dot);
 };
+void Clockwork::BlankBlink(){
+  D._hold(0, F.blank);
+  D._hold(1, F.blank);
+  D._hold(2, F.blank);
+  D._hold(3, F.blank);
+  D.blink(1, F.dot);
+}
 void Clockwork::_WD(uint8_t p, uint8_t wd){
   const uint8_t rus[7][2]={{1,5}, {3,2}, {1,6}, {5,4}, {7,6}, {3,6}, {5,0}, };
   D._hold(p,   F.rusWeekDays[rus[wd][0]]);
