@@ -10,7 +10,7 @@ extern "C" {
 }
 enum transition_fx
 {
-  fxNone, fxCut, fxUp, fxDown, fxLeft, fxRight, fxFadeLeft, fxFadeRight, fxFade
+  fxNone, fxCut, fxUp, fxDown, fxLeft, fxRight, fxFadeLeft, fxFadeRight, fxFadeIn, fxFadeOut
 };
 class Display4LED2
 {
@@ -57,6 +57,7 @@ void _ab(uint8_t p, const uint8_t AB[4]); // put animation to frames
 void _up(uint8_t p, uint8_t A, uint8_t B);
 void _down(uint8_t p, uint8_t A, uint8_t B);
 void _fadeOut(uint8_t p, const uint8_t D); 
+void _fadeIn(uint8_t p, const uint8_t D); 
 void _hold(uint8_t p, uint8_t A);
 // [!!!!] whole display
 void A(uint8_t A[4]); // put A (frame 0)
@@ -92,6 +93,7 @@ void right(uint8_t A[4], uint8_t B[4]);
 void left(uint8_t A[4], uint8_t B[4]);
 // [----]
 void fadeOut(const uint8_t D[4]);
+void fadeIn(const uint8_t D[4]);
 // [ABCD]
 void hold(uint8_t D[4]);
 

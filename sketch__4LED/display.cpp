@@ -72,8 +72,12 @@ void Display4LED2::transition(transition_fx x){
     break;
     case fxFadeRight:
     fadeRight(_AB[0][2],_AB[1][3]);
-    case fxFade:
-    fadeOut(_AB[1][3]);
+    break;
+    case fxFadeIn:
+    fadeIn(_AB[1][3]);
+    break;
+    case fxFadeOut:
+    fadeOut(_AB[0][3]);
     break;
     case fxCut:
     default:
@@ -116,10 +120,16 @@ void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){
 };
 // one position fx:
 void Display4LED2::_fadeOut(uint8_t p, const uint8_t D){ 
-  _AB[_b][0][p]= D & !(__A);
-  _AB[_b][1][p]= D & !(__A|__D);
+  _AB[_b][0][p]= D & (~(__A));
+  _AB[_b][1][p]= D & (~(__A|__D));
   _AB[_b][2][p]= __G;
   _AB[_b][3][p]= 0x00;
+}
+void Display4LED2::_fadeIn(uint8_t p, const uint8_t D){ 
+  _AB[_b][0][p]= 0x00;
+  _AB[_b][1][p]= __G;
+  _AB[_b][2][p]= D & ~(__A|__D);
+  _AB[_b][3][p]= D & ~(__A);
 }
 void Display4LED2::_up(uint8_t p, uint8_t A, uint8_t B){
   _AB[_b][0][p]= A;
@@ -367,6 +377,12 @@ void Display4LED2::fadeOut(const uint8_t D[4]){
   _fadeOut(1, D[1]);
   _fadeOut(2, D[2]);
   _fadeOut(3, D[3]);
+};
+void Display4LED2::fadeIn(const uint8_t D[4]){
+  _fadeIn(0, D[0]);
+  _fadeIn(1, D[1]);
+  _fadeIn(2, D[2]);
+  _fadeIn(3, D[3]);
 };
 
 void Display4LED2::hold(uint8_t D[4]){
