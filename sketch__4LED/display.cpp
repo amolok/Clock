@@ -35,6 +35,8 @@ uint8_t _shift_R(uint8_t X){
 uint8_t _shift_L(uint8_t X){
   return (X & __C)<<2 | (X & __B)<<4 ; }
 
+
+
 void Display4LED2::setRefresh(callbackFunction newFunction){
   _refreshFunc = newFunction;
 };
@@ -64,6 +66,9 @@ void Display4LED2::transition(transition_fx x){
     break;
     case fxRight:
     scrollRight(_AB[0][2],_AB[1][3]);
+    break;
+    case fxFade:
+    fadeOut(_AB[1][3]);
     break;
     case fxCut:
     default:
@@ -97,7 +102,7 @@ void Display4LED2::_p(uint8_t f, uint8_t D[4]){
   _AB[_b][f][2] = D[2];
   _AB[_b][f][3] = D[3];
 };
-// put animation to frames
+// put one animation to frames
 void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){ 
   _AB[_b][0][p]= AB[0];
   _AB[_b][1][p]= AB[1];
@@ -105,6 +110,18 @@ void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){
   _AB[_b][3][p]= AB[3];
 };
 // one position fx:
+void Display4LED2::_fadeIn(uint8_t p, const uint8_t D){ 
+  _AB[_b][0][p]= 0x00;
+  _AB[_b][1][p]= __G;
+  _AB[_b][2][p]= D & !(__A|__D);
+  _AB[_b][3][p]= D & !(__A);
+}
+void Display4LED2::_fadeOut(uint8_t p, const uint8_t D){ 
+  _AB[_b][0][p]= D & !(__A);
+  _AB[_b][1][p]= D & !(__A|__D);
+  _AB[_b][2][p]= __G;
+  _AB[_b][3][p]= 0x00;
+}
 void Display4LED2::_up(uint8_t p, uint8_t A, uint8_t B){
   _AB[_b][0][p]= A;
   _AB[_b][1][p] = _shift_U(A) | (B & __A)<<3 ;
@@ -297,6 +314,20 @@ void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][2][3]=_B[3];
   B(_B);
 };
+
+void Display4LED2::fadeIn(const uint8_t D[4]){
+  _fadeIn(0, D[0]);
+  _fadeIn(1, D[1]);
+  _fadeIn(2, D[2]);
+  _fadeIn(3, D[3]);
+};
+void Display4LED2::fadeOut(const uint8_t D[4]){
+  _fadeOut(0, D[0]);
+  _fadeOut(1, D[1]);
+  _fadeOut(2, D[2]);
+  _fadeOut(3, D[3]);
+};
+
 void Display4LED2::hold(uint8_t D[4]){
   // [ABCD]
   _hold(0,D[0]);
@@ -343,7 +374,8 @@ void Display4LED2::animator(){
   // 1s
   if(_f>3){
     if(_refreshFunc){
-      uint8_t tb=_b; _b=0; // all Refresh Function will write to VIEW
+      uint8_t tb=_b; _b=0;
+      // all Refresh Function will write to VIEW
       // Serial.println(F("animator:refresh"));
       _refreshFunc();
       _b=tb;
@@ -351,10 +383,56 @@ void Display4LED2::animator(){
     _f=0;
   }
 };
+
+void Display4LED2::setFlash(fxBrightness f){
+  _flash=f;
+}
+
 // display one frame -- update function -- PROG
 void Display4LED2::display(uint8_t f){
  // _D(3,f);
  // setBrightness((uint8_t)(f==0)+8);
+ if(!_flash)
+  setBrightness(_brightness);
+ else{
+  /*
+  uint8_t b=0;
+  uint8_t fb[4];
+  switch(_flash){
+    case fxBHigh:
+    fb[]={0xff,0xff,0xff,0xff};
+    break;
+    case fxBLow:
+    fb[]={0x08,0x08,0x08,0x08};
+    break;
+    case fxBFlash:
+    fb[]={0xff,0xff,0x08,0x08};
+    break;
+    case fxBBlink:
+    fb[]={0x08,0xff,0xff,0x08};
+    break;
+    case fxBAlert:
+    fb[]={0xff,0x08,0xff,0x08};
+    break;
+    case fxBPulse:
+    fb[]={0,4,8,6};
+    if(_brightness>0x80){
+      fb[0]=_brightness-fb[0];
+      fb[1]=_brightness-fb[1];
+      fb[2]=_brightness-fb[2];
+      fb[3]=_brightness-fb[3];
+    }else{
+      fb[0]=_brightness+fb[0];
+      fb[1]=_brightness+fb[1];
+      fb[2]=_brightness+fb[2];
+      fb[3]=_brightness+fb[3];      
+    }
+    break;
+    default:
+  }
+  setBrightness(fb[f]);
+  */
+ }
   print((_AB[0][f]));
 };
 void Display4LED2::setSegments(const uint8_t segments[4]){
@@ -370,7 +448,7 @@ void Display4LED2::setBrightness(uint8_t b){
   };
 // direct display writing D
 void Display4LED2::print(uint8_t D[4]){
-  setBrightness(_brightness);
+  // setBrightness(_brightness);
   ::display.setSegments(D,4,0);
 };
 
