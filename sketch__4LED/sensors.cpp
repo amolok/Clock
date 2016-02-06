@@ -59,8 +59,6 @@ void displaySensorDetails(void)
   delay(500);
 }
 
-
-
 void Sensors::_readDHT(){
   float t = dht.readTemperature();
   float h = dht.readHumidity();
@@ -80,13 +78,55 @@ void Sensors::_readBMP(){
   if (event.pressure)
   {
     float p = event.pressure * 0.75006375541921;
+    float t;
     // float p = event.pressure / 133.3223684;
     // {Serial.print(event.pressure); Serial.println("hPa");}
     // {Serial.print(p); Serial.println("mmHg");}
     /* Display atmospheric pressue in hPa */
     Pressure.lastValue=Pressure.value;
     Pressure.value=p;
+    bmp.getTemperature(&t);
+    TempBMP.lastValue=TempBMP.value;
+    TempBMP.value=t;    
   }
+  // if(event.te)
+}
+
+double Sensors::_readCoreTemp(){
+  unsigned int wADC;
+  double t;
+
+// The internal temperature has to be used
+// with the internal reference of 1.1V.
+// Channel 8 can not be selected with
+// the analogRead function yet.
+
+// Set the internal reference and mux.
+  ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
+  ADCSRA |= _BV(ADEN);  // enable the ADC
+
+  delay(20);            // wait for voltages to become stable.
+
+  ADCSRA |= _BV(ADSC);  // Start the ADC
+
+  // Detect end-of-conversion
+  while (bit_is_set(ADCSRA, ADSC));
+
+  // Reading register "ADCW" takes care of how to read ADCL and ADCH.
+  wADC = ADCW;
+
+  // The offset of 324.31 could be wrong. It is just an indication.
+  t = (wADC - 324.31 ) / 1.22;
+
+  // The returned temperature is in degrees Celcius.
+  return (t);
+}
+
+
+void Sensors::_readCore(){
+  double t = _readCoreTemp();
+  CoreTemp.lastValue=CoreTemp.value;
+  CoreTemp.value= (float)t;
 }
 
 void Sensors::_readCO2(){
@@ -99,35 +139,47 @@ void Sensors::update(){
   _readDHT();
   _readBMP();
   _readCO2();
+  _readCore();
 };
 void Sensors::init(){
   dht.begin();
-  if(!bmp.begin())
+  if(!bmp.begin(BMP085_MODE_STANDARD))
   {
     Serial.print("!!! BMP085 is not detected ... Check your wiring or I2C ADDR !");
     while(1);
   }
   // displaySensorDetails();
 };
-void Sensors::showTemp(){
+
+void _showTemp(sHistory t){
 // [-12°] [-1°C] [ 0°C] [ 1°C] [12°C] [23°C]
   byte p;
-  if(Temp.value<0) D._hold(0,F.minus);
+  if(t.value<0) D._hold(0,F.minus);
   else D._hold(0,F.blank);
-  if(Temp.value>-10){
-    if(Temp.value<10) {
-      D._D(1, abs(Temp.value));
+  if(t.value>-10){
+    if(t.value<10) {
+      D._D(1, abs(t.value));
     }else{
-      D._DD(0, Temp.value);
+      D._DD(0, t.value);
     }
     D._hold(2,F.grad); p=2;
     D._hold(3,F.celsius);
   }else{
-    D._DD(1, abs(Temp.value));
+    D._DD(1, abs(t.value));
     D._hold(3,F.grad); p=3;
   }
-  if(Temp.value>Temp.lastValue) D._ab(p, F.Sensor.Temp.rise);
-  else if(Temp.value<Temp.lastValue) D._ab(p, F.Sensor.Temp.fall);
+  if(t.value>t.lastValue) D._ab(p, F.Sensor.Temp.rise);
+  else if(t.value<t.lastValue) D._ab(p, F.Sensor.Temp.fall);  
+}
+
+void Sensors::showTemp(){
+  ::_showTemp(Temp);
+};
+void Sensors::showTempBMP(){
+  ::_showTemp(TempBMP);
+};
+void Sensors::showTempCPU(){
+  ::_showTemp(CoreTemp);
 };
 
 void Sensors::showPressure(){
