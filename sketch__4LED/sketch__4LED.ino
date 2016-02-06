@@ -1,4 +1,5 @@
-#define _DEBUG_
+#define __DEBUG__
+// #define __DEBUG_F__
 #include <Wire.h>
 #include "RTClib.h"
 RTC_DS1307 RTC;
@@ -49,14 +50,15 @@ sSettings Settings;
 // The amount of time (in milliseconds) between tests
 #define TEST_DELAY   25
 void printTime() {
-  Serial.print('\n> ');
+  Serial.print("\n");
+  Serial.print("> ");
   Serial.print(DayofWeek, DEC);
-  Serial.print(', ');
+  Serial.print(" - ");
   Serial.print(Day, DEC);
   Serial.print('/');
   Serial.print(Month, DEC);
   Serial.print('/');
-  Serial.print(Year, DEC);
+  Serial.print(Year+1900, DEC);
   Serial.print(' ');
   Serial.print(Hour, DEC);
   Serial.print(':');
@@ -75,7 +77,7 @@ void getTime() {
   Second = now.second();      // The second now (0-59)
   DayofWeek = now.dayOfTheWeek(); // Day of the week, Sunday is day 1
   // DayofWeek=(now.dayOfTheWeek()+6)%7;  // Day of the week, Sunday is day 1
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   // printTime();
 #endif
 }
@@ -83,7 +85,7 @@ void getTime() {
 void setup()
 {
   Serial.begin(9600);
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   Serial.println(F("Setup..."));
 #endif
   Serial.println( "Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
@@ -140,71 +142,12 @@ void loop()
 {
   getTime(); // !!! no time sync yet
   Button.tick();
-  if ((millis() - _time) > 250) {
+  if ((millis() - _time) > 249) {
     _time = millis();
     D.update();
   }
   delay(10);
 }
-/*
-  int prevTemp=0;
-
-  void showTemp(){
-  int temp=(int)GetTemp();
-  D._DD(0,temp);
-  if(temp!=prevTemp){
-    if(temp>prevTemp){
-      D._ab(2,F.Sensor.Temp.rise);
-    }else{
-      D._ab(2,F.Sensor.Temp.fall);
-    }
-    prevTemp=temp;
-  }else {
-  D._hold(2, F.Sensor.Temp.sign);
-  }
-
-  D._hold(3, F.blank);
-
-  for(uint8_t i=0;i<4;i++){
-  D.update();
-  delay(250);
-  }
-  }
-*/
-
-double GetTemp(void)
-{
-  unsigned int wADC;
-  double t;
-
-  //  digitalWrite(ledG, HIGH);
-
-  // The internal temperature has to be used
-  // with the internal reference of 1.1V.
-  // Channel 8 can not be selected with
-  // the analogRead function yet.
-
-  // Set the internal reference and mux.
-  ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
-  ADCSRA |= _BV(ADEN);  // enable the ADC
-
-  delay(20);            // wait for voltages to become stable.
-
-  ADCSRA |= _BV(ADSC);  // Start the ADC
-
-  // Detect end-of-conversion
-  while (bit_is_set(ADCSRA, ADSC));
-
-  // Reading register "ADCW" takes care of how to read ADCL and ADCH.
-  wADC = ADCW;
-
-  // The offset of 324.31 could be wrong. It is just an indication.
-  t = (wADC - 324.31 ) / 1.22;
-
-  // The returned temperature is in degrees Celcius.
-  return (t);
-}
-
 
 bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
 {
@@ -223,7 +166,7 @@ bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
 bool _inTime(tHHMM begin, tHHMM end, tHHMM v)
 {
   /*
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   Serial.print(v.Hour);
   Serial.print(":");
   Serial.print(v.Minute);
@@ -275,47 +218,38 @@ callbackFunction _onDoubleClick;
 callbackFunction _onPress;
 
 void setDefaultState() {
-#ifdef _DEBUG_
-  Serial.print("[setDefaultState ");
+#ifdef __DEBUG__
+  Serial.print("[");
 #endif
   tHHMM thm;
   thm.Hour = Hour;
   thm.Minute = Minute;
   if (_inTime(Settings.Day, Settings.Night, thm)) {
     _defaultState = DaylightClock;
-// #ifdef _DEBUG_
-  // Serial.print(" DaylightClock]");
-// #endif
   } else {
     if(_inTime(Settings.Sleep.start, Settings.Sleep.end, thm)){
       _defaultState = DeepNightClock;
-  // #ifdef _DEBUG_
-      // Serial.print(" DeepNightClock]");
-  // #endif
     }else{
       _defaultState = NightClock;
-// #ifdef _DEBUG_
-  // Serial.print(" NightClock]");
-// #endif
     }
   }
 // _defaultState = DeepNightClock;
-#ifdef _DEBUG_
+#ifdef __DEBUG_F__
 Serial.print((unsigned long)_defaultState);
 Serial.println(" ]");
 #endif
 };
 
 void _fallBack() {
-#ifdef _DEBUG_
-  Serial.print(F("<<<_fallBack "));
+#ifdef __DEBUG__
+  Serial.print(F("<"));
 #endif
   setDefaultState();
   clearStates();
-  #ifdef _DEBUG_
-  Serial.print("[ ");
+  #ifdef __DEBUG_F__
+  Serial.print("<<<");
   Serial.print((unsigned long)_defaultState);
-  Serial.print(" <");
+  Serial.print("<<< ");
   #endif
   addState(_defaultState, 0, fxCut);
   // nextState();
@@ -323,8 +257,8 @@ void _fallBack() {
 };
 
 void addState(callbackFunction state , word d, transition_fx f) {
-#ifdef _DEBUG_
-  Serial.print(F("<<<addState "));
+#ifdef __DEBUG__
+  Serial.print(F("+"));
 #endif
   stateStruct s;
   s.fn = state;
@@ -332,6 +266,16 @@ void addState(callbackFunction state , word d, transition_fx f) {
   s.f = f;
   _states.insert(_states.begin(), s);
 };
+
+void _debug_time(){
+  Serial.print(F("\n"));
+  Serial.print(Hour);
+  Serial.print(":");
+  Serial.print(Minute);
+  Serial.print(":");
+  Serial.print(Second);
+  Serial.print(F("  \t"));
+}
 
 void nextState()
 {
@@ -342,25 +286,21 @@ void nextState()
     _states.pop_back();
     // initializing
   } else {
-#ifdef _DEBUG_
-    Serial.println("<<<_defaultState");
+#ifdef __DEBUG__
+    Serial.print(F("<<<"));
+    // Serial.println("<<<_defaultState");
 #endif
     _state.fn = _defaultState;
     _state.f = fxCut;
     _state.timer = 0;
   }
-#ifdef _DEBUG_
+#ifdef __DEBUG_F__
   Serial.print(F("nextState "));
   Serial.print((unsigned long)_state.fn);
-  Serial.print(F(" >>>\n"));
 #endif
-#ifdef _DEBUG_
-  Serial.print(Hour);
-  Serial.print(":");
-  Serial.print(Minute);
-  Serial.print(":");
-  Serial.print(Second);
-  Serial.print(F("  \t"));
+#ifdef __DEBUG__
+  Serial.print(F(" >>> "));
+  _debug_time();
 #endif
   _c = 0;
   D.drawToBuffer();
@@ -372,30 +312,31 @@ void nextState()
 void clearStates() {
   _states.clear();
   _states.reserve(12);
+  // _c=0;
 }
 void onClick() {
-  Serial.print("<onClick>");
+  #ifdef __DEBUG__
+  Serial.print("\n<onClick>\n");
+  #endif
   if (_onClick)_onClick();
-  else Serial.print(" nope!");
-  Serial.print("\n");
 }
 void onDoubleClick() {
-  Serial.print("onDoubleClick !");
+  #ifdef __DEBUG__
+  Serial.print("\n<onDoubleClick>\n");
+  #endif
   if (_onDoubleClick)_onDoubleClick();
-  else Serial.print(" nope!");
-  Serial.print("\n");
   // nextState();
 }
 void onPress() {
-  Serial.print("onPress !");
+  #ifdef __DEBUG__
+  Serial.print("\n<onPress>\n");
+  #endif
   if (_onPress)_onPress();
-  else Serial.print(" nope!");
-  Serial.print("\n");
 }
 
 void MachineStart() {
-#ifdef _DEBUG_
-  Serial.print("\n\nMachineStart... ");
+#ifdef __DEBUG__
+  Serial.print("\n\nMachine Starting... ");
 #endif
   clearStates();
   // set # millisec after single click is assumed.
@@ -412,12 +353,12 @@ void MachineStart() {
   setDefaultState();
   ClockYYYY();
   addState(ClockDDMM,     1, fxCut);
-  addState(ClockHHMM,     1, fxCut);
+  addState(ClockHHMM,     2, fxCut);
   addState(_defaultState, 0, fxCut);
   nextState();
   D.setRefresh(update);
-#ifdef _DEBUG_
-  Serial.println(" --- complete.");
+#ifdef __DEBUG__
+  Serial.println("... Machine started.");
 #endif
 };
 // void set(callbackFunction f){
@@ -426,12 +367,14 @@ void MachineStart() {
 
 // 1s
 void update() {
-  // #ifdef _DEBUG_
-  // Serial.println(F("<update>"));
-  // #endif
+  #ifdef __DEBUG_F__
+  Serial.print(F("<"));
+  Serial.print((unsigned long)_state.fn);
+  Serial.print(F(">"));
+  #endif
   if (_state.fn)_state.fn();
   else {
-    // #ifdef _DEBUG_
+    // #ifdef __DEBUG__
     Serial.println("!!! undef _state.fn !!!");
     // nextState();
     // _fallBack();
@@ -441,30 +384,30 @@ void update() {
   }
   // 0 = last state or shortest (1s) show
   if (_state.timer == 0) {
-#ifdef _DEBUG_
-    Serial.print(F("."));
+#ifdef __DEBUG__
+    // Serial.print(F("."));
 #endif
     if (_states.size() > 0) {
-      // #ifdef _DEBUG_
-      // Serial.println("<states>");
-      // #endif
+      #ifdef __DEBUG__
+      Serial.print(">");
+      #endif
       nextState();
     } else {
-      // #ifdef _DEBUG_
-      // Serial.println("(states) ");
+      // #ifdef __DEBUG__
+      // Serial.print(".");
       // #endif
-      _fallBack();
+      if(_c>3*60)_fallBack();
     }
   } else {
     // all that >0 is a countdown
     if (_state.timer-- > 0) {
-#ifdef _DEBUG_
+#ifdef __DEBUG_F__
       Serial.print("<");
       Serial.print(_state.timer);
       Serial.print("> ");
 #endif
       if (_state.timer == 0) {
-#ifdef _DEBUG_
+#ifdef __DEBUG_F__
         Serial.print("<<timer>> ");
 #endif
         nextState();
@@ -484,66 +427,79 @@ void update() {
 /* STATES */
 
 
-void ClockBlankBlink() {
-  Clock.BlankBlink();
+void ClockNOPE() {
+  // Clock.BlankBlink();
+  D._hold(0, F.blank);
+  D._hold(1, F.blank);
+  D._hold(2, F.blank);
+  D._hold(3, F.blank);
+  if(Second%2==0)
+    D._hold(1, F.dot);
+  #ifdef __DEBUG__
+  Serial.print(F("."));
+  #endif
 }
+
 void ClockHHMM() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   // Serial.print(".");
   if (_c == 0)Serial.print("ClockHHMM ");
 #endif
   Clock.HHMM();
 }
+
 void ClockMMSS() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ClockMMSS ");
 #endif
   Clock.MMSS();
 }
 void ClockWeek() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ClockWeek ");
 #endif
   Clock.Week();
 }
 void ClockDDWD() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ClockDDWD ");
 #endif
   Clock.DDWD();
 }
 void ClockDDMM() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ClockDDMM ");
 #endif
   Clock.DDMM();
 }
 void ClockYYYY() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ClockYYYY ");
 #endif
   Clock.YYYY();
 }
 void ShowTemp() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ShowTemp ");
 #endif
   S.showTemp();
 }
+void ShowTempBMP() {S.showTempBMP(); }
+void ShowTempCPU() {S.showTempCPU(); }
 void ShowHumidity() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ShowHumidity ");
 #endif
   S.showHumidity();
 }
 void ShowPressure() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ShowPressure ");
 #endif
   S.showPressure();
 }
 void ShowCO2() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.print("ShowCO2 ");
 #endif
   S.showCO2();
@@ -555,22 +511,59 @@ void ClockSunrise() {
   Clock.Sunrise();
 }
 
+void switchToClockFace(){
+  clearStates();
+  // if(_c==0){
+    #ifdef __DEBUG__
+      if (_c == 0)Serial.print("switchToClockFace ");
+    #endif    
+    _onClick=_fallBack;
+    _onDoubleClick=_fallBack;
+    _onPress=_fallBack;
+  // }
+  addState(ClockSS_Seconds, 0, fxFadeIn);
+  nextState();
+}
 
+void ClockSS_Seconds(){
+  D._hold(0, F.blank);
+  D._hold(1, F.Clock.back[0]);
+  D._hold(2, F.Clock.back[1]);
+  D._hold(3, F.blank);
+  D.blink(1, F.Clock.face[(Second/5)*2]);
+  D.blink(2, F.Clock.face[(Second/5)*2+1]);
+}
 // extern void NightClock(void);
 
 /* CYCLES */
 
+void ClockDDWDMM(){
+  if(_c==3){
+    D.drawToBuffer();
+    ClockDDMM();
+    D.transition(fxDown);
+    D._DD(0,Day);
+    D.transition(fxCut);
+    return;
+  }
+  if(_c<3)ClockDDWD();
+  if(_c>3)ClockDDMM();
+}
+
 void cycleDate() {
-  addState(ClockMMSS, 5, fxFadeRight);
-  addState(ClockWeek, 5, fxRight);
-  addState(ClockDDWD, 3, fxRight);
-  addState(ClockDDMM, 3, fxDown);
+  addState(ClockMMSS, 5, fxMixRight);
+  addState(ClockWeek, 4, fxRight);
+  addState(ClockDDWDMM, 6, fxRight);
+  // addState(ClockDDWD, 3, fxRight);
+  // addState(ClockDDMM, 3, fxDown);
   addState(ClockYYYY, 3, fxRight);
 };
 
 void cyclePopupInnerCondiotions() {
   addState(ShowCO2,      3, fxDown);
   addState(ShowTemp,     3, fxDown);
+  addState(ShowTempCPU,  3, fxDown);
+  addState(ShowTempBMP,  3, fxDown);
   addState(ShowHumidity, 3, fxDown);
   addState(ShowPressure, 3, fxDown);
   // addState(ShowTemp,     3, fxDown);
@@ -579,9 +572,10 @@ void cyclePopupInnerCondiotions() {
   // addState(ClockHHMM,   10, fxUp);
 }
 
+
 void cycleOneClick() {
   clearStates();
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   Serial.println("cycleOneClick");
 #endif
   S.update();
@@ -590,23 +584,25 @@ void cycleOneClick() {
   addState(ClockHHMM,    3, fxDown);
   addState(_fallBack,    0, fxCut);
   _onClick = nextState;
-  // _onDoubleClick=NULL;
+  _onDoubleClick=switchToClockFace;
   _onPress = _fallBack;
   nextState();
 };
 
 void cycleTwoClick() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   Serial.println(F("cycleTwoClick"));
 #endif
   clearStates();
+  // _onClick = nextState;
+  _onClick = switchToClockFace;
+  _onDoubleClick=switchToClockFace;
+  // _onPress = switchToClockFace;
+  _onPress = _fallBack;
   cycleDate();
   setDefaultState();
   addState(ClockHHMM, 3, fxLeft);
   addState(_fallBack, 0, fxCut);
-  _onClick = nextState;
-  // _onDoubleClick=NULL;
-  _onPress = _fallBack;
   nextState();
 };
 
@@ -618,7 +614,7 @@ void cycleSensors() {
 }
 
 void ShowSensors() {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
   if (_c == 0)Serial.println("ShowSensors");
 #endif
   if (_c == 0) {
@@ -636,11 +632,11 @@ void ShowSensors() {
 };
 
 void NightClock() {
-  // #ifdef _DEBUG_
+  // #ifdef __DEBUG__
   // Serial.println("NightClock");
   // #endif
   if (_c == 0) {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
     Serial.println("NightClock -- init");
 #endif
     clearStates();
@@ -666,8 +662,8 @@ void NightClock() {
       cycleDate();
       addState(ClockHHMM,  6, fxLeft);
     } else {
-      addState(ClockMMSS,  6, fxFadeRight);
-      addState(ClockHHMM,    6, fxFadeLeft);
+      addState(ClockMMSS,  6, fxMixRight);
+      addState(ClockHHMM,    6, fxMixLeft);
     }
     cyclePopupInnerCondiotions();
     addState(ClockHHMM,    1, fxUp);
@@ -679,8 +675,8 @@ void NightClock() {
     addState(_fallBack,    0, fxCut);
   }
   if (Second == 40) {
-    addState(ClockMMSS,    7, fxFadeRight);
-    addState(ClockHHMM,    3, fxFadeLeft);
+    addState(ClockMMSS,    7, fxMixRight);
+    addState(ClockHHMM,    3, fxMixLeft);
   }
   /*
     if(Second==5){
@@ -708,16 +704,17 @@ void NightClock() {
 
 void DaylightClock() {
   if (_c == 0) {
-#ifdef _DEBUG_
+#ifdef __DEBUG__
     Serial.println(F("DaylightClock"));
 #endif
     clearStates();
-    D.setBrightness(0xff);
+    D.setBrightness(0x0f);
     // _defaultState = DaylightClock;
     _onClick = cycleOneClick;
     _onDoubleClick = cycleTwoClick;
     _onPress = _fallBack;
-    addState(ClockHHMM, 0, fxCut);
+    ClockHHMM();
+    // addState(ClockHHMM, 0, fxCut);
     // nextState();
   };
   if (Second == 55) {
@@ -743,78 +740,136 @@ void DaylightClock() {
       setDefaultState();
     } else {
       // Serial.println("yep, here!");
-      addState(_defaultState,  0, fxCut);
+      // addState(_defaultState,  0, fxCut);
+      ClockHHMM();
     }
   }
 };
 
 void cycleNightClick() {
+  clearStates();
+  addState(ClockHHMM, 4, fxDown);
+  addState(ClockDDWDMM, 6, fxDown);
+  cyclePopupInnerCondiotions();
   addState(ClockHHMM, 4, fxUp);
-  cycleSensors();
-  addState(ClockHHMM, 4, fxLeft);
-  addState(ClockMMSS, 90, fxLeft);
+  // addState(ClockMMSS, 9, fxMixLeft);
+  addState(ClockNOPE, 5, fxFadeOut);
+  // addState(ClockNOPE, 90, fxCut);
+}
+
+void cycleNightDoubleClick(){
+  clearStates();
+  addState(ClockHHMM, 3, fxRight);
+  addState(ClockMMSS, 3, fxMixRight);
+  addState(ClockDDWD, 3, fxMixRight);
+  addState(ClockNOPE, 0, fxRight);
+  addState(_fallBack, 0, fxCut);
 }
 
 void DeepNightClock() {
-  if(_c<12){
-    if (_c == 0) {
-      #ifdef _DEBUG_
-        Serial.print(F("\n[DeepNightClock "));
-        Serial.print((unsigned long)_defaultState);
-        Serial.print(F(" ] "));
-      #endif
-      clearStates();
-      D.setBrightness(0x08);
+  // if(_c<12){
+  if (_c == 0) {
+    #ifdef __DEBUG__
+    Serial.println(F("\nDeepNightClock "));
+    #endif
+    S.update();
+      // clearStates();
+    D.setBrightness(0x08);
       // _defaultState = DeepNightClock;
-      _onClick = cycleNightClick;
-      _onDoubleClick = cycleTwoClick;
-      _onPress = _fallBack;
-
-      if((_prevState==_defaultState)||(!_prevState)) {
-        Serial.print("(defaultState)");
-        // ClockHHMM();
-        addState(ClockHHMM, 5, fxFadeIn);
-        // addState(ClockHHMM, 5, fxCut);
-        // addState(setDefaultState, 0, fxCut);
-        // addState(ClockBlankBlink, 0, fxCut);
-        // addState(DeepNightClock,  0, fxCut);
-      }
-      if(_prevState==ClockHHMM){
-        Serial.print(" (ClockHHMM) ");
-        addState(ClockMMSS,       5, fxFadeRight);
-        addState(ClockBlankBlink, 1, fxFadeOut);
-      }
-      if(_prevState==ClockMMSS){
-      }
-      if(_prevState==ClockBlankBlink){
-        ClockBlankBlink();
-      }
-      if(_prevState==DeepNightClock){
-        ClockBlankBlink();
-      }
-      // _fallBack();
-    }else{
-      // if(_c<3)ClockHHMM();
-      // if(_c==3)ClockBlankBlink();
-      // if(_c>3)ClockMMSS();
-      ClockMMSS();
-    }
-  }else{
-    ClockBlankBlink();
+    _onClick = cycleNightClick;
+    _onDoubleClick = cycleNightDoubleClick;
+    _onPress = _fallBack;
   }
-  
-  if(Second == 55){
+  // }else{
+  // }
+
+  ClockNOPE();
+
+  if(Hour<3){
+    if(Second==15)
+    {
+      if(Minute%10==1)addState(ShowTemp,     4, fxFadeIn);
+      if(Minute%10==2)addState(ShowHumidity, 4, fxFadeIn);
+      if(Minute%10==3)addState(ShowCO2,      4, fxFadeIn);
+      if(Minute%10==4)addState(ShowPressure, 4, fxFadeIn);
+      if(Minute%10==5)addState(ClockWeek,    4, fxFadeIn);
+      if(Minute%10==6)addState(ClockDDWD,    4, fxFadeIn);
+      if(Minute%10==7)addState(ClockDDMM,    4, fxFadeIn);
+      if(Minute%10==8)addState(ShowHumidity, 4, fxFadeIn);
+      if(Minute%10==9)addState(ShowTemp,     4, fxFadeIn);
+      if(Minute%10==0)addState(ShowCO2,      4, fxFadeIn);
+      addState(ClockNOPE, 1, fxFadeOut);
+    }
+    if(Second==30)
+    {
+      if(Minute%10==0){
+        S.update();
+        clearStates();
+        addState(ClockHHMM,  4, fxFadeIn);
+        if(Minute%10==0){
+          cyclePopupInnerCondiotions();
+          addState(ClockHHMM,4, fxDown);
+        }
+        addState(ClockNOPE, 1, fxFadeOut);
+      }
+      if(Minute%10==5){
+        addState(ClockHHMM, 4, fxDown);
+        addState(ClockNOPE, 1, fxDown);
+        // addState(_fallBack, 0, fxCut);
+      }
+    }
+
+    if(Second==45)
+    {
+      if(Minute%10==3){
+        addState(ClockHHMM, 4, fxUp);
+        addState(ClockNOPE, 1, fxDown);
+        // addState(_fallBack, 0, fxCut);
+      }
+    }
+
+  }
+
+  // any hour
+  if(Second == 55)
+  {
     S.update();
     clearStates();
     if(Minute==59){
-      addState(ClockHHMM,    6, fxFadeIn);
+      addState(ClockHHMM,  6, fxFadeIn);
       cyclePopupInnerCondiotions();
+      addState(ClockHHMM,  8, fxDown);
+    } else {
+      if(Minute%10==1){
+        addState(ClockHHMM,  8, fxFadeIn);
+        addState(ClockNOPE,  1, fxFadeOut);
+      }
+      if(Minute%10==2){
+        addState(ClockHHMM,  8, fxLeft);
+        addState(ClockDDMM,  4, fxLeft);
+        addState(ClockNOPE,  1, fxLeft);
+      }
+      if(Minute%10==3){
+        addState(ClockNOPE,  2, fxCut);
+        addState(ClockHHMM,  8, fxRight);
+        addState(ClockMMSS,  4, fxMixRight);
+        addState(ClockNOPE,  1, fxRight);
+      }
+      if(Minute%10==4){
+        addState(ClockNOPE,  4, fxCut);
+        addState(ClockHHMM,  6, fxUp);
+        addState(ClockNOPE,  1, fxUp);
+      }
+      if(Minute%10==5){
+        addState(ClockHHMM,  8, fxLeft);
+        addState(ClockNOPE,  1, fxRight);
+      }
     }
-    addState(ClockHHMM,      6, fxFadeIn);
-    addState(ClockBlankBlink,6, fxFadeOut);
-  // } else {
+    // addState(ClockNOPE,    0, fxFadeOut);
+    // addState(_fallBack,    0, fxCut);
   }
-  
+  // Serial.print(Second);
+  // Serial.print(F("@"));
 }
   /*
     void ClockMenu(){
