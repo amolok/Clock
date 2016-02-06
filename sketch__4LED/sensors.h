@@ -68,12 +68,16 @@ private:
   void _readDHT();
   void _readBMP();
   void _readCO2();
+  void _readCore();
+  double _readCoreTemp();
 public:
-  sHistory Temp, Humidity, Pressure, CO2; // Light;
+  sHistory CoreTemp, Temp, Humidity, Pressure, TempBMP, CO2; // Light;
   void update();
   void init();
   // [-12°] [-1°C] [ 0°C] [ 1°C] [12°C] [23°C]
+  void showTempCPU();
   void showTemp();
+  void showTempBMP();
   // [40%]
   void showHumidity();
   // [750m]

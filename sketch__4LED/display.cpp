@@ -35,6 +35,8 @@ uint8_t _shift_R(uint8_t X){
 uint8_t _shift_L(uint8_t X){
   return (X & __C)<<2 | (X & __B)<<4 ; }
 
+
+
 void Display4LED2::setRefresh(callbackFunction newFunction){
   _refreshFunc = newFunction;
 };
@@ -64,6 +66,18 @@ void Display4LED2::transition(transition_fx x){
     break;
     case fxRight:
     scrollRight(_AB[0][2],_AB[1][3]);
+    break;
+    case fxMixLeft:
+    mixLeft( _AB[0][2],_AB[1][3]);
+    break;
+    case fxMixRight:
+    mixRight(_AB[0][2],_AB[1][3]);
+    break;
+    case fxFadeIn:
+    fadeIn(_AB[1][3]);
+    break;
+    case fxFadeOut:
+    fadeOut(_AB[0][3]);
     break;
     case fxCut:
     default:
@@ -97,7 +111,7 @@ void Display4LED2::_p(uint8_t f, uint8_t D[4]){
   _AB[_b][f][2] = D[2];
   _AB[_b][f][3] = D[3];
 };
-// put animation to frames
+// put one animation to frames
 void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){ 
   _AB[_b][0][p]= AB[0];
   _AB[_b][1][p]= AB[1];
@@ -105,6 +119,18 @@ void Display4LED2::_ab(uint8_t p, const uint8_t AB[4]){
   _AB[_b][3][p]= AB[3];
 };
 // one position fx:
+void Display4LED2::_fadeOut(uint8_t p, const uint8_t D){ 
+  _AB[_b][0][p]= D & (~(__A));
+  _AB[_b][1][p]= D & (~(__A|__D));
+  _AB[_b][2][p]= __G;
+  _AB[_b][3][p]= 0x00;
+}
+void Display4LED2::_fadeIn(uint8_t p, const uint8_t D){ 
+  _AB[_b][0][p]= 0x00;
+  _AB[_b][1][p]= __G;
+  _AB[_b][2][p]= D & ~(__A|__D);
+  _AB[_b][3][p]= D & ~(__A);
+}
 void Display4LED2::_up(uint8_t p, uint8_t A, uint8_t B){
   _AB[_b][0][p]= A;
   _AB[_b][1][p] = _shift_U(A) | (B & __A)<<3 ;
@@ -223,6 +249,29 @@ void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
   _AB[_b][3][2]=B[2];
   _AB[_b][3][3]=B[3];
 };
+void Display4LED2::mixRight(uint8_t A[4], uint8_t B[4]){
+// ABCD→EFGH BCDE CDEF DEFG EFGH
+  if(_DEBUG_)Serial.println("scrollRight");
+  _AB[_b][0][0]=A[0];
+  _AB[_b][0][1]=A[1];
+  _AB[_b][0][2]=A[2] | B[0];
+  _AB[_b][0][3]=A[3] | B[1];
+
+  _AB[_b][1][0]=A[1];
+  _AB[_b][1][1]=A[2] | B[0];
+  _AB[_b][1][2]=A[3] | B[1];
+  _AB[_b][1][3]=B[2];
+
+  _AB[_b][2][0]=A[2] | B[0];
+  _AB[_b][2][1]=A[3] | B[1];
+  _AB[_b][2][2]=B[2];
+  _AB[_b][2][3]=B[3];
+
+  _AB[_b][3][0]=B[0];
+  _AB[_b][3][1]=B[1];
+  _AB[_b][3][2]=B[2];
+  _AB[_b][3][3]=B[3];
+};
 void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
 // ABCD→EFGH ABCD CD__ __EF EFGH
   if(_DEBUG_)Serial.println("right");
@@ -238,6 +287,30 @@ void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][2][2]=_B[0];
   _AB[_b][2][3]=_B[1];
   B(_B);
+};
+
+void Display4LED2::mixLeft(uint8_t _A[4], uint8_t _B[4]){
+// ABCD←EFGH HABC GHAB FGHA EFGH
+  if(_DEBUG_)Serial.println(F("left"));
+  _AB[_b][0][0]=_A[0] | _B[2];
+  _AB[_b][0][1]=_A[1] | _B[3];
+  _AB[_b][0][2]=_A[2];
+  _AB[_b][0][3]=_A[3];
+
+  _AB[_b][1][0]=_B[1];
+  _AB[_b][1][1]=_A[0] | _B[2];
+  _AB[_b][1][2]=_A[1] | _B[3];
+  _AB[_b][1][3]=_A[2];
+
+  _AB[_b][2][0]=_B[0];
+  _AB[_b][2][1]=_B[1];
+  _AB[_b][2][2]=_A[0] | _B[2];
+  _AB[_b][2][3]=_A[1] | _B[3];
+
+  _AB[_b][3][0]=_B[0];
+  _AB[_b][3][1]=_B[1];
+  _AB[_b][3][2]=_B[2];
+  _AB[_b][3][3]=_B[3];
 };
 
 void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
@@ -283,7 +356,8 @@ void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][3][2]=_B[3];
   _AB[_b][3][3]=F.blank;
 };
-*/void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
+*/
+void Display4LED2::left(uint8_t _A[4], uint8_t _B[4]){
 // ABCD←EFGH ABCD __AB GH__ EFGH
   if(_DEBUG_)Serial.println(F("left"));
   // A(_A);
@@ -297,6 +371,20 @@ void Display4LED2::scrollLeft(uint8_t _A[4], uint8_t _B[4]){
   _AB[_b][2][3]=_B[3];
   B(_B);
 };
+
+void Display4LED2::fadeOut(const uint8_t D[4]){
+  _fadeOut(0, D[0]);
+  _fadeOut(1, D[1]);
+  _fadeOut(2, D[2]);
+  _fadeOut(3, D[3]);
+};
+void Display4LED2::fadeIn(const uint8_t D[4]){
+  _fadeIn(0, D[0]);
+  _fadeIn(1, D[1]);
+  _fadeIn(2, D[2]);
+  _fadeIn(3, D[3]);
+};
+
 void Display4LED2::hold(uint8_t D[4]){
   // [ABCD]
   _hold(0,D[0]);
