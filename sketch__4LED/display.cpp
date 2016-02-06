@@ -67,11 +67,11 @@ void Display4LED2::transition(transition_fx x){
     case fxRight:
     scrollRight(_AB[0][2],_AB[1][3]);
     break;
-    case fxFadeLeft:
-    fadeLeft( _AB[0][2],_AB[1][3]);
+    case fxMixLeft:
+    mixLeft( _AB[0][2],_AB[1][3]);
     break;
-    case fxFadeRight:
-    fadeRight(_AB[0][2],_AB[1][3]);
+    case fxMixRight:
+    mixRight(_AB[0][2],_AB[1][3]);
     break;
     case fxFadeIn:
     fadeIn(_AB[1][3]);
@@ -249,7 +249,7 @@ void Display4LED2::scrollRight(uint8_t A[4], uint8_t B[4]){
   _AB[_b][3][2]=B[2];
   _AB[_b][3][3]=B[3];
 };
-void Display4LED2::fadeRight(uint8_t A[4], uint8_t B[4]){
+void Display4LED2::mixRight(uint8_t A[4], uint8_t B[4]){
 // ABCD→EFGH BCDE CDEF DEFG EFGH
   if(_DEBUG_)Serial.println("scrollRight");
   _AB[_b][0][0]=A[0];
@@ -289,7 +289,7 @@ void Display4LED2::right(uint8_t _A[4], uint8_t _B[4]){
   B(_B);
 };
 
-void Display4LED2::fadeLeft(uint8_t _A[4], uint8_t _B[4]){
+void Display4LED2::mixLeft(uint8_t _A[4], uint8_t _B[4]){
 // ABCD←EFGH HABC GHAB FGHA EFGH
   if(_DEBUG_)Serial.println(F("left"));
   _AB[_b][0][0]=_A[0] | _B[2];
