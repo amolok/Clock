@@ -7,9 +7,6 @@ RTC_DS1307 RTC;
 char compileTime[] = __TIME__;
 
 #include <StandardCplusplus.h>
-//#include <system_configuration.h>
-//#include <unwind-cxx.h>
-//#include <utility.h>
 #include <Arduino.h>
 
 // #include <vector>
@@ -30,6 +27,8 @@ Clockwork Clock;
 #define BTN 8
 OneButton Button(BTN, false);
 
+#define failSafe 900
+#define MACHINE_SIZE 16
 Sensors S;
 
 // Time
@@ -82,6 +81,9 @@ void getTime() {
 #endif
 }
 
+uint8_t _sync;
+uint8_t _Second;
+
 void setup()
 {
   Serial.begin(9600);
@@ -98,12 +100,10 @@ void setup()
   }
   getTime();
   printTime();
-  Settings.Day.Hour = 9;
-  Settings.Day.Minute = 0;
-  Settings.Night.Hour = 17;
-  Settings.Night.Minute = 0;
-  Settings.Sleep.start={23,0};
-  Settings.Sleep.end={7,30};
+  Settings.Day   =       {9,0};
+  Settings.Night =      {17,0};
+  Settings.Sleep.start= {23,0};
+  Settings.Sleep.end  = {7,30};
   /*
     int k;
     uint8_t _D[] = { 0xff, 0xff, 0xff, 0xff };
@@ -125,6 +125,7 @@ void setup()
     }
   */
   S.init();
+  S.update();
   /*
     for(k = 15; k >= 4; k--) {
     D.setBrightness(k);
@@ -135,18 +136,58 @@ void setup()
   */
   D.setBrightness(0x08);
   _time = millis();
+#ifdef __DEBUG__
+  {
+    uint8_t _D[4];
+    D.setBrightness(0x08);
+    for (int i = 0; i < 60; ++i)
+    {
+      // _D[0]=0xff;
+      // _D[1]=0xff;
+      // _D[2]=0xff;
+      // _D[3]=0xff;
+      // _D[0]=F.blank;
+      // _D[1]=F.Clock.back[0];
+      // _D[2]=F.Clock.back[1];
+      // _D[3]=F.blank;
+      _D[0]=F.blank;
+      _D[1]=F.blank;
+      _D[2]=F.blank;
+      _D[3]=F.blank;
+      D.print(_D);
+      if(i%2==0)_D[1]=~F.Clock.second[(i%4)*2+0];
+      if(i%2==0)_D[2]=~F.Clock.second[(i%4)*2+1];
+      // if(i%2==0)_D[0]=F.Sensor.Humidity.sign[1];
+      // if(i%2==0)_D[1]=F.Sensor.Humidity.sign[0];
+      // if(i%2==0)_D[2]=F.Sensor.Humidity.sign[1];
+      // if(i%2==0)_D[3]=F.Sensor.Humidity.sign[0];
+      D.print(_D);
+    }
+  }
+#endif
+  _Second = Second;
   MachineStart();
 }
 
 void loop()
 {
-  getTime(); // !!! no time sync yet
+  getTime();
   Button.tick();
-  if ((millis() - _time) > 249) {
+  if ((millis() - _time) > 240) {
     _time = millis();
-    D.update();
-  }
-  delay(10);
+    if(D.getFrameCounter()==0){
+     S.update();
+     {
+       while(_Second==Second){
+         getTime();
+         delay(1);
+       }
+       _Second = Second;
+     }
+   } 
+  D.update();
+ }
+ delay(10);
 }
 
 bool _inHour(tHHMM begin, tHHMM end, tHHMM v)
@@ -252,7 +293,7 @@ void _fallBack() {
   Serial.print("<<< ");
   #endif
   addState(_defaultState, 0, fxCut);
-  // nextState();
+  nextState();
   // if(_defaultState)_defaultState();
 };
 
@@ -264,8 +305,24 @@ void addState(callbackFunction state , word d, transition_fx f) {
   s.fn = state;
   s.timer = d;
   s.f = f;
-  _states.insert(_states.begin(), s);
+  // flood failsafe
+  if(_states.size()<MACHINE_SIZE)
+    _states.insert(_states.begin(), s);
 };
+
+void holdState(){
+  #ifdef __DEBUG__
+  Serial.print(F("^"));
+  #endif
+    // stateStruct s;
+    // s.fn = _state.fn;
+    // s.timer = 600;
+    // s.f = fxCut;
+    // _states.insert(_states.end(), s);
+    // nextState();
+  if((_state.fn!=ClockNONE)&&(_state.fn!=ClockNOPE))
+    _state.timer = 600;
+}
 
 void _debug_time(){
   Serial.print(F("\n"));
@@ -281,7 +338,8 @@ void nextState()
 {
   // const uint8_t _D[4]={F.blank,F.blank,F.blank,F.blank}; D.hold(_D);
   if (_states.size() > 0) {
-    if(_state.fn != _defaultState)_prevState = _state.fn;
+    if(_state.fn != _defaultState)
+      _prevState = _state.fn;
     _state = _states.back();
     _states.pop_back();
     // initializing
@@ -311,7 +369,7 @@ void nextState()
 
 void clearStates() {
   _states.clear();
-  _states.reserve(12);
+  _states.reserve(MACHINE_SIZE);
   // _c=0;
 }
 void onClick() {
@@ -340,9 +398,9 @@ void MachineStart() {
 #endif
   clearStates();
   // set # millisec after single click is assumed.
-  // Button.setClickTicks(600);
+  Button.setClickTicks(300);
   // set # millisec after press is assumed.
-  // Button.setPressTicks(2000);
+  Button.setPressTicks(1000);
   // attach Button functions
   Button.attachClick(onClick);
   Button.attachDoubleClick(onDoubleClick);
@@ -375,7 +433,8 @@ void update() {
   if (_state.fn)_state.fn();
   else {
     // #ifdef __DEBUG__
-    Serial.println("!!! undef _state.fn !!!");
+    Serial.println("!");
+    // Serial.print("\n!!! undefined _state.fn !!!\n");
     // nextState();
     // _fallBack();
     // return;
@@ -426,13 +485,15 @@ void update() {
 
 /* STATES */
 
-
-void ClockNOPE() {
-  // Clock.BlankBlink();
+void ClockNONE() {
   D._hold(0, F.blank);
   D._hold(1, F.blank);
   D._hold(2, F.blank);
   D._hold(3, F.blank);
+}
+
+void ClockNOPE() {
+  ClockNONE();
   if(Second%2==0)
     D._hold(1, F.dot);
   #ifdef __DEBUG__
@@ -513,25 +574,60 @@ void ClockSunrise() {
 
 void switchToClockFace(){
   clearStates();
-  // if(_c==0){
+  if(_c==0){
     #ifdef __DEBUG__
       if (_c == 0)Serial.print("switchToClockFace ");
     #endif    
-    _onClick=_fallBack;
+    _onClick=nextState;
     _onDoubleClick=_fallBack;
     _onPress=_fallBack;
-  // }
-  addState(ClockSS_Seconds, 0, fxFadeIn);
+  }
+  addState(ClockQQSS, 0, fxFadeIn);
+  // addState(ClockCWS, 0, fxFadeIn);
   nextState();
 }
 
-void ClockSS_Seconds(){
+// 1/4 animation
+
+void ClockCWS(){
+  // [ [] ]
   D._hold(0, F.blank);
   D._hold(1, F.Clock.back[0]);
   D._hold(2, F.Clock.back[1]);
   D._hold(3, F.blank);
-  D.blink(1, F.Clock.face[(Second/5)*2]);
-  D.blink(2, F.Clock.face[(Second/5)*2+1]);
+  D.blink(1, F.Clock.minute[(Second/5)*2]);
+  D.blink(2, F.Clock.minute[(Second/5)*2+1]);
+}
+
+void ClockSSQQ(){
+// [SS:[]]
+  _incSM(0, Second);
+  uint8_t CW[2][4];
+  for (uint8_t i = 0; i < 4; ++i)
+  {
+    CW[0][i]=F.Clock.second[i*2];
+    CW[1][i]=F.Clock.second[i*2+1];
+  }
+  D._ab(2, CW[0]);
+  D._ab(3, CW[1]);
+  D.blink(1,F.dot);
+}
+
+void ClockQQSS(){
+  // D._hold(0, F.blank);
+  uint8_t CW[2][4];
+  for (uint8_t i = 0; i < 4; ++i)
+  {
+    CW[0][i]=F.Clock.halfSecond[i*2];
+    CW[1][i]=F.Clock.halfSecond[i*2+1];
+    // CW[0][i]=F.Clock.second[i*2];
+    // CW[1][i]=F.Clock.second[i*2+1];
+  }
+  D._ab(0, CW[0]);
+  D._ab(1, CW[1]);
+  D._hold(2, F.d[Second/10]);
+  D._hold(3, F.d[Second%10]);
+  // D._hold(3, F.blank);
 }
 // extern void NightClock(void);
 
@@ -560,11 +656,26 @@ void cycleDate() {
 };
 
 void cyclePopupInnerCondiotions() {
-  addState(ShowCO2,      3, fxDown);
+  /*
   addState(ShowTemp,     3, fxDown);
-  addState(ShowTempCPU,  3, fxDown);
-  addState(ShowTempBMP,  3, fxDown);
+  addState(ClockNONE,    0, fxDown);
   addState(ShowHumidity, 3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowCO2,      3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ClockHHMM,    4, fxDown);
+  addState(ClockNONE,    1, fxFadeOut);
+  nextState();
+  */
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowCO2,      3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowTemp,     3, fxDown);
+  addState(ShowTempCPU,  1, fxDown);
+  addState(ShowTempBMP,  1, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowHumidity, 3, fxDown);
+  addState(ClockNONE,    0, fxDown);
   addState(ShowPressure, 3, fxDown);
   // addState(ShowTemp,     3, fxDown);
   // addState(ClockHHMM,    6, fxUp);
@@ -584,7 +695,7 @@ void cycleOneClick() {
   addState(ClockHHMM,    3, fxDown);
   addState(_fallBack,    0, fxCut);
   _onClick = nextState;
-  _onDoubleClick=switchToClockFace;
+  _onDoubleClick=holdState;
   _onPress = _fallBack;
   nextState();
 };
@@ -594,9 +705,9 @@ void cycleTwoClick() {
   Serial.println(F("cycleTwoClick"));
 #endif
   clearStates();
-  // _onClick = nextState;
-  _onClick = switchToClockFace;
-  _onDoubleClick=switchToClockFace;
+  _onClick = nextState;
+  // _onClick = switchToClockFace;
+  _onDoubleClick=holdState;
   // _onPress = switchToClockFace;
   _onPress = _fallBack;
   cycleDate();
@@ -622,7 +733,7 @@ void ShowSensors() {
     // _defaultState = ShowSensors;
     _onClick = cycleOneClick;
     // _onDoubleClick = cycleOneClick;
-    _onDoubleClick = NightClock;
+    _onDoubleClick = holdState;
     _onPress = _fallBack;
     S.update();
     D.setBrightness(0x08);
@@ -640,7 +751,7 @@ void NightClock() {
     Serial.println("NightClock -- init");
 #endif
     clearStates();
-    S.update();
+    // S.update();
     D.setBrightness(0x08);
     ClockHHMM();
     // _defaultState = NightClock;
@@ -655,6 +766,7 @@ void NightClock() {
   }
   if (Second == 55) {
     // update sensors
+    clearStates();
     S.update();
     // every hour
     if (Minute == 59) {
@@ -665,7 +777,7 @@ void NightClock() {
       addState(ClockMMSS,  6, fxMixRight);
       addState(ClockHHMM,    6, fxMixLeft);
     }
-    cyclePopupInnerCondiotions();
+    // cyclePopupInnerCondiotions();
     addState(ClockHHMM,    1, fxUp);
     addState(_fallBack,    0, fxCut);
   }
@@ -735,9 +847,10 @@ void DaylightClock() {
     // S.update();
     if (((Hour == Settings.Night.Hour) && (Minute == Settings.Night.Minute)) && (Second == 30)) {
       clearStates();
-      addState(ClockSunset, 1, fxCut);
-      addState(NightClock, 0, fxCut);
       setDefaultState();
+      addState(ClockNONE,   1, fxFadeOut);
+      addState(ClockSunset, 1, fxCut);
+      addState(NightClock,  1, fxCut);
     } else {
       // Serial.println("yep, here!");
       // addState(_defaultState,  0, fxCut);
@@ -746,37 +859,58 @@ void DaylightClock() {
   }
 };
 
-void cycleNightClick() {
+void cycleDeepNightClick() {
   clearStates();
-  addState(ClockHHMM, 4, fxDown);
-  addState(ClockDDWDMM, 6, fxDown);
-  cyclePopupInnerCondiotions();
-  addState(ClockHHMM, 4, fxUp);
-  // addState(ClockMMSS, 9, fxMixLeft);
-  addState(ClockNOPE, 5, fxFadeOut);
-  // addState(ClockNOPE, 90, fxCut);
+  _onClick = nextState;
+  _onDoubleClick = holdState;
+  addState(ClockHHMM,    3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowTemp,     3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowHumidity, 3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ShowCO2,      3, fxDown);
+  addState(ClockNONE,    0, fxDown);
+  addState(ClockHHMM,    4, fxDown);
+  addState(ClockNONE,    1, fxFadeOut);
+  nextState();
 }
 
 void cycleNightDoubleClick(){
   clearStates();
-  addState(ClockHHMM, 3, fxRight);
-  addState(ClockMMSS, 3, fxMixRight);
-  addState(ClockDDWD, 3, fxMixRight);
-  addState(ClockNOPE, 0, fxRight);
-  addState(_fallBack, 0, fxCut);
+  _onClick = nextState;
+  _onDoubleClick = holdState;
+  _onPress = _fallBack;
+  addState(ClockHHMM,  3, fxUp);
+  addState(ClockMMSS,  6, fxMixRight);
+  addState(ClockDDWD,  3, fxRight);
+  addState(ClockQQSS, 15, fxLeft);
+  addState(ClockSSQQ, 15, fxDown);
+  // addState(ClockQQSS, 10, fxCut);
+  // addState(ClockCWS, 5, fxCut);
+  // addState(ClockQQSS, 20, fxCut);
+  // addState(ClockCWS, 10, fxCut);
+  // addState(ClockMMSS, 3, fxUp);
+  // addState(ClockQQSS, 30, fxCut);
+  // addState(ClockCWS, 15, fxCut);
+  // addState(ClockQQSS, 60, fxCut);
+  // addState(ClockCWS, 120, fxCut);
+  addState(ClockNOPE, 3, fxFadeOut);
+  // addState(_fallBack, 0, fxCut);
+  nextState();
 }
 
 void DeepNightClock() {
   // if(_c<12){
   if (_c == 0) {
     #ifdef __DEBUG__
-    Serial.println(F("\nDeepNightClock "));
+    Serial.println(F("DeepNightClock "));
     #endif
     S.update();
       // clearStates();
     D.setBrightness(0x08);
       // _defaultState = DeepNightClock;
-    _onClick = cycleNightClick;
+    _onClick = cycleDeepNightClick;
     _onDoubleClick = cycleNightDoubleClick;
     _onPress = _fallBack;
   }
@@ -793,7 +927,7 @@ void DeepNightClock() {
       if(Minute%10==3)addState(ShowCO2,      4, fxFadeIn);
       if(Minute%10==4)addState(ShowPressure, 4, fxFadeIn);
       if(Minute%10==5)addState(ClockWeek,    4, fxFadeIn);
-      if(Minute%10==6)addState(ClockDDWD,    4, fxFadeIn);
+      if(Minute%10==6)addState(ClockDDWD,    4, fxRight);
       if(Minute%10==7)addState(ClockDDMM,    4, fxFadeIn);
       if(Minute%10==8)addState(ShowHumidity, 4, fxFadeIn);
       if(Minute%10==9)addState(ShowTemp,     4, fxFadeIn);
@@ -863,6 +997,10 @@ void DeepNightClock() {
       if(Minute%10==5){
         addState(ClockHHMM,  8, fxLeft);
         addState(ClockNOPE,  1, fxRight);
+      }
+      if(Minute%10==6){
+        addState(ClockCWS,  90, fxFadeIn);
+        addState(ClockNOPE,  1, fxFadeOut);
       }
     }
     // addState(ClockNOPE,    0, fxFadeOut);

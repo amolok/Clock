@@ -223,10 +223,10 @@ void Sensors::showCO2(){
     D._DDDD(CO2.value);
   else {
     D._hold(0, F.blank);
-    if(CO2.value<590)
-      D._ab(0,F.Sensor.CO2.low);
-    if(CO2.value>600)
-      D._ab(0,F.Sensor.CO2.high);
+    if(CO2.value<590) D._ab(0,F.Sensor.CO2.low);
+    if(CO2.value>600) D._ab(0,F.Sensor.CO2.high);
+    // if(CO2.value>CO2.lastValue)      D._ab(0, F.Sensor.CO2.rise);
+    // else if(CO2.value<CO2.lastValue) D._ab(0, F.Sensor.CO2.fall);    
     D._DDD(1, CO2.value);
   }
 };

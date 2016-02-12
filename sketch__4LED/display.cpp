@@ -425,13 +425,17 @@ void Display4LED2::update(){
   Display4LED2::animator();
 };
 
+uint8_t Display4LED2::getFrameCounter(){
+  return _f;
+}
+
 // display animation
 void Display4LED2::animator(){
   display(_f++);
   // 1s
   if(_f>3){
     if(_refreshFunc){
-      uint8_t tb=_b; _b=0; // all Refresh Function will write to VIEW
+      uint8_t tb=_b; _b=0; // all Refresh Function will write to VIEW? no, PROG directly
       // Serial.println(F("animator:refresh"));
       _refreshFunc();
       _b=tb;

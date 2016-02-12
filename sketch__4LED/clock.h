@@ -13,11 +13,12 @@ extern "C" {
   typedef void (*callbackFunction)(void);
 }
 
+void _incSM(uint8_t p, uint8_t x);
+
 class Clockwork
 {
 private:
   uint8_t _D[4];
-  // void _incSM(uint8_t p, uint8_t x);
   // void _incHH(uint8_t b, uint8_t x);
   // void _SM(uint8_t p, uint8_t x);
 public:

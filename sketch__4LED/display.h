@@ -40,6 +40,7 @@ void setSegments(const uint8_t segments[4]);
 void showNumberDec(int num, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0);
 void setBrightness(uint8_t b);
 void setRefresh(callbackFunction newFunction);
+uint8_t getFrameCounter(void);
 /* 
   Transition effects 
 
